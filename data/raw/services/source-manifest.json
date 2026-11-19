@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "snapshotId": "guangzhou-ltci-records-2026-11-15",
+  "archives": [
+    {
+      "source": {
+        "id": "ltci-2025-assessment",
+        "title": "广州市医疗保险服务中心关于公布广州市长期护理保险定点服务机构2025年度综合考核结果的通知",
+        "url": "https://www.gz.gov.cn/zfjg/gzsylbzj/ybfw/content/post_10804799.html",
+        "publisher": "广州市医疗保障局",
+        "publishedAt": "2026-05-09",
+        "accessedAt": "2026-11-15",
+        "kind": "annual-assessment",
+        "period": "2025年度",
+        "limitations": "2025年度综合考核记录快照；不说明当前协议状态，也不区分机构护理和居家护理服务类别。"
+      },
+      "articleTitle": "广州市医疗保险服务中心关于公布广州市长期护理保险定点服务机构2025年度综合考核结果的通知",
+      "htmlFile": "ltci-2025-assessment.html",
+      "htmlSha256": "5bc400d74abe0cd79070c1836a1c7a307ac42da904a127cfd1782877b9bc8629",
+      "tableFile": "ltci-2025-assessment.csv",
+      "tableSha256": "0150de269bbb823a7d1b57ad0f8b8b34918a0222c9dede156205dc41345a43de",
+      "headers": ["序号", "类型", "机构名称", "服务地址", "考核 等次"],
+      "expectedRows": 250,
+      "recordIdPrefix": "gz-ltci-2025-assessment-"
+    },
+    {
+      "source": {
+        "id": "ltci-2026-15-designation",
+        "title": "广州市医疗保险服务中心关于广州市长期护理保险新增定点评估合格服务机构名单的公示（2026.15）",
+        "url": "https://www.gz.gov.cn/zfjg/gzsylbzj/ybfw/content/post_10984980.html",
+        "publisher": "广州市医疗保障局",
+        "publishedAt": "2026-09-01",
+        "accessedAt": "2026-11-15",
+        "kind": "designation-notice",
+        "period": "2026.15",
+        "limitations": "新增定点评估合格公示快照；不证明其当前协议状态或后续实际服务情况。"
+      },
+      "articleTitle": "广州市医疗保险服务中心关于广州市长期护理保险新增定点评估合格服务机构名单的公示（2026.15）",
+      "htmlFile": "ltci-2026-15-designation.html",
+      "htmlSha256": "9b59276c4dd4c2b3e6d4172100a35d5a34ea729134b47d109e9be4a0d2dbd0ec",
+      "tableFile": "ltci-2026-15-designation.csv",
+      "tableSha256": "e3b495e887dee0b3fd149098ea51ac9ed695fc3edb65fa1a4aa4f524221d0341",
+      "headers": ["序号", "单位名称", "所在区", "提供服务地址", "服务类别", "服务项目", "机构类别"],
+      "expectedRows": 1,
+      "recordIdPrefix": "gz-ltci-20260901-notice-"
+    }
+  ]
+}

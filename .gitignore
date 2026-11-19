@@ -1,0 +1,13 @@
+node_modules/
+.next*/
+out/
+data/private/
+data/generated/
+.env*
+*.tsbuildinfo
+output/
+.playwright-cli/
+.superpowers/
+__pycache__/
+*.pyc
+

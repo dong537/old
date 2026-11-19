@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body { @apply bg-page font-sans text-[16px] leading-relaxed text-ink antialiased; }
+  a { @apply text-brand hover:text-brand-dark; }
+  :focus-visible { @apply outline outline-[3px] outline-offset-2 outline-brand; }
+  h1, h2, h3 { @apply font-semibold; text-wrap: pretty; }
+  p, dd, li, h1, h2, h3 { overflow-wrap: anywhere; }
+  input, select, button { font: inherit; }
+  :where(section[id]) { scroll-margin-top: 24px; }
+  table { @apply w-full border-collapse; }
+  th { @apply bg-page px-3 py-2 text-left text-[13px] font-semibold text-sub; }
+  td { @apply border-t border-hair px-3 py-2.5 align-top; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+}
+
+@layer components {
+  .container-site { @apply mx-auto w-full max-w-site px-4 sm:px-6; }
+  .card { @apply rounded-xl border border-line bg-white; }
+  .source-entry { @apply flex min-w-0 flex-col rounded-xl border border-line border-l-[3px] border-l-brand bg-white p-5 transition-colors hover:border-brand; }
+  .filter-panel { @apply rounded-2xl border border-line bg-white p-4 sm:p-5; }
+  .record-card { @apply overflow-hidden rounded-2xl border border-line bg-white; }
+  .record-evidence { @apply flex flex-wrap items-center justify-between gap-x-5 gap-y-1 border-t border-hair bg-page/75 px-5 py-3 text-[13px] text-sub; }
+  .panel { @apply rounded-xl border border-line bg-white; }
+  .section-panel { @apply panel p-5 sm:p-7; }
+  .btn { @apply inline-flex h-11 items-center justify-center gap-1.5 rounded-lg px-5 font-semibold no-underline transition-colors disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn-sm { @apply h-9 px-3.5 text-[13px]; }
+  .btn-primary { @apply btn bg-brand text-white hover:bg-brand-dark hover:text-white; }
+  .btn-outline { @apply btn border border-brand bg-white text-brand hover:bg-brand-tint; }
+  .btn-ghost { @apply btn border border-line bg-white font-normal text-ink hover:bg-page hover:text-ink; }
+  .chip { @apply inline-flex items-center gap-1 whitespace-nowrap rounded-md px-2 py-0.5 text-xs; }
+  .input { @apply h-11 w-full min-w-0 rounded-lg border border-[#D5D8DD] bg-white px-3 text-[15px] outline-none focus:border-brand; }
+  .textarea { @apply w-full rounded-lg border border-[#D5D8DD] bg-white px-3 py-2 text-[15px] outline-none focus:border-brand; }
+  .section { @apply card flex scroll-mt-16 flex-col gap-4 p-5 sm:p-6; }
+  .table-wrap { @apply -mx-1 overflow-x-auto; }
+  .field { @apply min-h-12 w-full min-w-0 rounded-lg border border-[#767676] bg-white px-3 py-2 text-ink; }
+  .label { @apply mb-2 block text-sm font-semibold; }
+  .eyebrow { @apply text-sm font-medium tracking-wide text-brand; }
+  .note { @apply text-sm leading-relaxed text-sub; }
+  .tag { @apply inline-flex rounded-md border border-brand-line bg-brand-tint px-2 py-0.5 text-xs font-medium text-brand-ink; }
+  .notice { @apply rounded-lg border border-caution-line bg-caution-bg px-4 py-3 text-sm text-caution; }
+  .underlink { @apply underline decoration-brand-line underline-offset-4 hover:decoration-brand; }
+  .detail-grid { @apply grid gap-x-8 gap-y-5 sm:grid-cols-2; }
+  .detail-label { @apply mb-1 text-sm text-sub; }
+  .detail-value { @apply m-0 text-base font-medium; }
+  .visit-answer-line { min-height: 1.25rem; border-bottom: 1px solid #b8bec5; }
+  .visit-date-line { width: 7rem; min-height: 1.25rem; border-bottom: 1px solid #b8bec5; }
+}
+
+@media print {
+  body:has(.visit-print-sheet) { background: #fff !important; color: #111 !important; }
+  body:has(.visit-print-sheet) > div { display: block !important; min-height: 0 !important; }
+  body:has(.visit-print-sheet) > div > header,
+  body:has(.visit-print-sheet) > div > footer,
+  body:has(.visit-print-sheet) > div > a,
+  body:has(.visit-print-sheet) #main-content > :not(.visit-print-sheet) { display: none !important; }
+  body:has(.visit-print-sheet) #main-content { display: block !important; width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }
+  .visit-print-sheet { display: block !important; border: 0 !important; padding: 0 !important; box-shadow: none !important; }
+  .visit-print-sheet a { color: inherit !important; text-decoration: none !important; }
+  .visit-print-sheet a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 8pt; overflow-wrap: anywhere; }
+  .visit-sheet-card { break-inside: avoid; page-break-inside: avoid; margin-top: 12pt; padding: 10pt !important; }
+  .visit-questions li { break-inside: avoid; }
+  .visit-answer-line { min-height: 18pt; }
+}

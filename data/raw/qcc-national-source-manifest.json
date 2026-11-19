@@ -1,0 +1,157 @@
+{
+  "schemaVersion": 1,
+  "exportedAt": "2026-11-16",
+  "rowCount": 141364,
+  "sourceFiles": [
+    {
+      "id": "qcc-source-3612e0cb9695024d",
+      "filename": "【企查查】高级搜索20261116(1116_151874370) 2026-11-16 22_26_40.xlsx",
+      "sha256": "3612e0cb9695024d426417a0834e645ba405fc6cb6c715466db7a2f2641d2fa7",
+      "rowCount": 5000
+    },
+    {
+      "id": "qcc-source-f7e420835d38fff0",
+      "filename": "【企查查】高级搜索20261116(1116_151874374) 2026-11-16 22_27_14.xlsx",
+      "sha256": "f7e420835d38fff0f1a27619cd675313ea750a48d007a25e849d58e48b3bbed2",
+      "rowCount": 4999
+    },
+    {
+      "id": "qcc-source-3b7efa2860c8c3c2",
+      "filename": "【企查查】高级搜索20261116(1116_151874377) 2026-11-16 22_27_36.xlsx",
+      "sha256": "3b7efa2860c8c3c2d39e0e408bb504fccea3f85e0577826bc8fb9b83b653093c",
+      "rowCount": 4987
+    },
+    {
+      "id": "qcc-source-0e4d8cf0dd652752",
+      "filename": "【企查查】高级搜索20261116(1116_151874380) 2026-11-16 22_28_01.xlsx",
+      "sha256": "0e4d8cf0dd6527526456d6a6c492b3c429fc89fc4cdc2f8c85abd513a786f98c",
+      "rowCount": 4991
+    },
+    {
+      "id": "qcc-source-fbcdeff53774a46b",
+      "filename": "【企查查】高级搜索20261116(1116_151874386) 2026-11-16 22_28_34.xlsx",
+      "sha256": "fbcdeff53774a46bac893b2d80fcaf0c147e0d2e2f04553c63e15bdc662d28f9",
+      "rowCount": 4983
+    },
+    {
+      "id": "qcc-source-35643d4652ed1ff4",
+      "filename": "【企查查】高级搜索20261116(1116_151874398) 2026-11-16 22_29_01.xlsx",
+      "sha256": "35643d4652ed1ff4d9b5976858c553ece2b47d393fc492dc79836041c44de2a3",
+      "rowCount": 4978
+    },
+    {
+      "id": "qcc-source-adff4837a9c08132",
+      "filename": "【企查查】高级搜索20261116(1116_151874403) 2026-11-16 22_29_20.xlsx",
+      "sha256": "adff4837a9c0813235781a5551926de10330a19760268a46cad83f9480f28ec1",
+      "rowCount": 4978
+    },
+    {
+      "id": "qcc-source-23cad33e21a23bac",
+      "filename": "【企查查】高级搜索20261116(1116_151874408) 2026-11-16 22_29_47.xlsx",
+      "sha256": "23cad33e21a23bac4f8bfdbdd1c26d012367ddf08a249d894046060e9887b21f",
+      "rowCount": 4959
+    },
+    {
+      "id": "qcc-source-e5b76c31cd66286b",
+      "filename": "【企查查】高级搜索20261116(1116_151874416) 2026-11-16 22_30_14.xlsx",
+      "sha256": "e5b76c31cd66286becc3600e3cc0ce55a53d0548fc821304e413b2eb9e43dcee",
+      "rowCount": 4973
+    },
+    {
+      "id": "qcc-source-92eaebd5da5cfca2",
+      "filename": "【企查查】高级搜索20261116(1116_151874424) 2026-11-16 22_30_36.xlsx",
+      "sha256": "92eaebd5da5cfca25dfca5bba34ac92bd67ccbc07c7e81a58c38f2e9a9c45c4e",
+      "rowCount": 4955
+    },
+    {
+      "id": "qcc-source-03d95e15a17cfb39",
+      "filename": "【企查查】高级搜索20261116(1116_151874444) 2026-11-16 22_31_49.xlsx",
+      "sha256": "03d95e15a17cfb3987d2f5efc6e25b573545e66a11c30857ecba74eb12a9ab2e",
+      "rowCount": 4983
+    },
+    {
+      "id": "qcc-source-ede80d448cc4b8b8",
+      "filename": "【企查查】高级搜索20261116(1116_151874448) 2026-11-16 22_32_09.xlsx",
+      "sha256": "ede80d448cc4b8b8995cf9ee0726321684382404cefb1c027e578849b25a26fd",
+      "rowCount": 4966
+    },
+    {
+      "id": "qcc-source-49b50a8ffba15ae8",
+      "filename": "【企查查】高级搜索20261116(1116_151874457) 2026-11-16 22_32_44.xlsx",
+      "sha256": "49b50a8ffba15ae8c0f720f0c966524d18aa28d289a2ba5853ed0eff253eae98",
+      "rowCount": 4969
+    },
+    {
+      "id": "qcc-source-f7dbb64b8d996efd",
+      "filename": "【企查查】高级搜索20261116(1116_151874462) 2026-11-16 22_33_10.xlsx",
+      "sha256": "f7dbb64b8d996efd2a25dc8db7c967f90451d36d14ae33e19847bbe7810fa39b",
+      "rowCount": 4999
+    },
+    {
+      "id": "qcc-source-05569021266aaaa2",
+      "filename": "【企查查】高级搜索20261116(1116_151874472) 2026-11-16 22_33_50.xlsx",
+      "sha256": "05569021266aaaa299d4dc4e3ce5d5e7a72706449b8a01016de0273331152785",
+      "rowCount": 4983
+    },
+    {
+      "id": "qcc-source-df34766be7fb965a",
+      "filename": "【企查查】高级搜索20261116(1116_151874476) 2026-11-16 22_34_09.xlsx",
+      "sha256": "df34766be7fb965a9e6dc940b2bb71e927c83ae793118c8ef2eede1159791248",
+      "rowCount": 4976
+    },
+    {
+      "id": "qcc-source-d1b5dcb43dc06d5b",
+      "filename": "【企查查】高级搜索20261116(1116_151874477) 2026-11-16 22_34_25.xlsx",
+      "sha256": "d1b5dcb43dc06d5bf75e1dc54e31af914a3f05e2303dd6c9d1bd2ee64f977b29",
+      "rowCount": 4986
+    },
+    {
+      "id": "qcc-source-1c985f0922c181ce",
+      "filename": "【企查查】高级搜索20261116(1116_151874482) 2026-11-16 22_35_09.xlsx",
+      "sha256": "1c985f0922c181ce163600b1fbb5f8cab9fb48c08f0ca76bcebd26442adccaad",
+      "rowCount": 4967
+    },
+    {
+      "id": "qcc-source-b855dc530223c68b",
+      "filename": "【企查查】高级搜索20261116(1116_151874495) 2026-11-16 22_35_47.xlsx",
+      "sha256": "b855dc530223c68ba2dc3127bc3aad870355ff99057864f755a597b6ca5e2389",
+      "rowCount": 4995
+    },
+    {
+      "id": "qcc-source-b4c01bfe9a5c530e",
+      "filename": "【企查查】高级搜索20261116(1116_151874510) 2026-11-16 22_36_37.xlsx",
+      "sha256": "b4c01bfe9a5c530e95b2caed29466f2a6f2cc9c45a5cd43a27c7a49601448c00",
+      "rowCount": 4954
+    },
+    {
+      "id": "qcc-source-ebb4a5838809a3ae",
+      "filename": "【企查查】高级搜索20261116(1116_151874749) 2026-11-16 22_52_52.xlsx",
+      "sha256": "ebb4a5838809a3ae440fd87f61ee7a28e89114b0347602b11564e86ab9e44ccb",
+      "rowCount": 9970
+    },
+    {
+      "id": "qcc-source-7fe8aec7098f9854",
+      "filename": "【企查查】高级搜索20261116(1116_151874760) 2026-11-16 22_53_27.xlsx",
+      "sha256": "7fe8aec7098f98548732dd42b15a26592a94da7c54c03531bca75d5ab16d9d2c",
+      "rowCount": 9937
+    },
+    {
+      "id": "qcc-source-8a8f5255ebfcbc25",
+      "filename": "【企查查】高级搜索20261116(1116_151874768) 2026-11-16 22_53_50.xlsx",
+      "sha256": "8a8f5255ebfcbc259e0d7eb5b16894819c6d7dc8087ae8dd24773242828bffc3",
+      "rowCount": 9917
+    },
+    {
+      "id": "qcc-source-1af11949f4fb86d6",
+      "filename": "【企查查】高级搜索20261116(1116_151874773) 2026-11-16 22_54_22.xlsx",
+      "sha256": "1af11949f4fb86d6841b9b703018c8d164ec22cd63c4ff9587a924c5923eaf25",
+      "rowCount": 9939
+    },
+    {
+      "id": "qcc-source-ef859431ea3df7b0",
+      "filename": "【企查查】高级搜索20261116(1116_151874777) 2026-11-16 22_54_33.xlsx",
+      "sha256": "ef859431ea3df7b0a176fc8ad5aaa3d9cf70230678a57cfe3629490b42fffcdc",
+      "rowCount": 2020
+    }
+  ]
+}

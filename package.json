@@ -1,0 +1,49 @@
+{
+  "name": "eldercare-sources",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "data:build": "tsx scripts/build-data.ts && tsx scripts/build-service-data.ts",
+    "data:private": "tsx scripts/build-data.ts --private",
+    "services:build": "tsx scripts/build-service-data.ts",
+    "dev": "npm run dev:directory",
+    "dev:prototype": "node scripts/prototype.mjs",
+    "dev:directory": "npm run data:build && next dev --hostname 127.0.0.1",
+    "dev:private": "npm run data:private && node scripts/dev-private.mjs",
+    "typecheck": "npm run typecheck:directory && npm run typecheck:prototype",
+    "typecheck:directory": "tsc --noEmit",
+    "typecheck:prototype": "tsc --noEmit -p prototype/tsconfig.json",
+    "test": "tsx --test tests/*.test.ts",
+    "build": "npm run data:build && next build && tsx scripts/check-public-output.ts",
+    "official:check": "python scripts/build-national-official.py --check",
+    "qcc-institutions:check": "python scripts/build-qcc-institutions.py --check",
+    "qcc-institution-links:check": "python scripts/build-qcc-institution-links.py --check",
+    "qcc-institution-registry-links:check": "python scripts/build-qcc-institution-registry-links.py --check",
+    "verify:local-release": "npm run official:check && npm run qcc-institutions:check && npm run qcc-institution-links:check && npm run qcc-institution-registry-links:check && npm run verify:release",
+    "verify:release": "npm run typecheck && npm test && npm run build",
+    "preview": "node scripts/preview.mjs"
+  },
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "dependencies": {
+    "next": "15.5.29",
+    "react": "19.1.10",
+    "react-dom": "19.1.10",
+    "server-only": "0.0.1",
+    "csv-parse": "7.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "8.5.32",
+    "tailwindcss": "3.4.19",
+    "typescript": "5.9.3",
+    "tsx": "^4.20.6"
+  },
+  "overrides": {
+    "postcss": "8.5.32"
+  }
+}

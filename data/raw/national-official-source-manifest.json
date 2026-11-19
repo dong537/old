@@ -1,0 +1,166 @@
+{
+  "schemaVersion": 1,
+  "sources": [
+    {
+      "id": "cq-mzj-20251222",
+      "filename": "chongqing-20251222.html",
+      "sha256": "157ef38646c9c47a1cae4e802bbb9ffe079f1e087a1591a34bd10095d1c8e76e",
+      "bytes": 5416941,
+      "rowCount": 1725
+    },
+    {
+      "id": "js-zjg-20261029",
+      "filename": "zhangjiagang-20261029.html",
+      "sha256": "675fe864e615b89f56d6d591ef22035bdbe3b8c52e6d23debfcff1c550aea5dd",
+      "bytes": 69789,
+      "rowCount": 20
+    },
+    {
+      "id": "fj-mzt-undated",
+      "filename": "fujian-undated.html",
+      "sha256": "6f05af9d1d166d11e73d5254db5526c93399adf9675e1977dc21eaf1915766ab",
+      "bytes": 428280,
+      "rowCount": 944
+    },
+    {
+      "id": "hn-mzt-20260112",
+      "filename": "hunan-2025.xlsx",
+      "sha256": "014521751d040e339edbef8ca53aecf01d451d59bdc52e5bdfcd4f5189e02f97",
+      "bytes": 131638,
+      "rowCount": 1768
+    },
+    {
+      "id": "js-nj-20260310",
+      "filename": "nanjing-202602.html",
+      "sha256": "ace786a9e7c97e2a5e41f58302fe78e86fdfae43734b4d8ac91ee16900054c8c",
+      "bytes": 579360,
+      "rowCount": 278
+    },
+    {
+      "id": "hb-qj-20260615",
+      "filename": "hubei-wuhancircle-202605.html",
+      "sha256": "afafd7dc7a2d60c1a865d86ca2d98eb421ed76bb049f488e2a84eddbfa871955",
+      "bytes": 1270374,
+      "rowCount": 747
+    },
+    {
+      "id": "he-sjz-20260320",
+      "filename": "shijiazhuang-2026.pdf",
+      "sha256": "af8ee7ef6bece727da874a5ef04dbbc0ea0956f2f98d51931e61bb454ed15bab",
+      "bytes": 334248,
+      "rowCount": 268
+    },
+    {
+      "id": "bj-mzj-20260210",
+      "filename": "beijing-stars-20251231.docx",
+      "sha256": "ad41da1b9a8b9f557059d9edefcf64e549a60d070aa89d376f390e96311e6280",
+      "bytes": 279087,
+      "rowCount": 459
+    },
+    {
+      "id": "sc-ncgp-20250220",
+      "filename": "gaoping-202502.xlsx",
+      "sha256": "16be0957c865e4b68d8eb8f546871998e83a99c30005c192347ef946e20adb08",
+      "bytes": 9751,
+      "rowCount": 36
+    },
+    {
+      "id": "sc-dz-20260814",
+      "filename": "dazhou-preview-20261117.json",
+      "sha256": "ce692c03de0ab538305ee9714045734f0eefc7e42c7a18868c760b46f65955d5",
+      "bytes": 21585,
+      "rowCount": 30
+    },
+    {
+      "id": "sc-dz-xuanhan-20260722",
+      "filename": "dazhou-98c83f7a84a0488290df5a2025ad6932-preview-20261117.json",
+      "sha256": "d226ac58d257a1463483b145d68f008f8d4889dcd44d37dd80bbf7cdadfdb248",
+      "bytes": 6280,
+      "rowCount": 27
+    },
+    {
+      "id": "sc-dz-wanyuan-20260722",
+      "filename": "dazhou-567ef5ba62324c16a39e16dfe43094bd-preview-20261117.json",
+      "sha256": "55b7d23917bd47ff2aa10aa8c4ea53db988b5632bebb15bc50a528cb50ffd8c8",
+      "bytes": 8871,
+      "rowCount": 21
+    },
+    {
+      "id": "sc-dz-dazhu-20260722",
+      "filename": "dazhou-2bba3e7042374a84bf1c479e066a5c0f-preview-20261117.json",
+      "sha256": "7f85369ab2e72aa28054fd5d31272c3887b49119930566a6f7ad733c26dc6d90",
+      "bytes": 8792,
+      "rowCount": 21
+    },
+    {
+      "id": "sc-dz-kaijiang-20260722",
+      "filename": "dazhou-3583b17b10e544e080458b8107e9364c-preview-20261117.json",
+      "sha256": "70a3dc1a41e3c41e6e6bf8cf689cb71ea2bc16ab80a31e7b7889acf09698c79c",
+      "bytes": 3104,
+      "rowCount": 14
+    },
+    {
+      "id": "sc-pzh-20260901",
+      "filename": "panzhihua-43f1109ec4c04fde854889873395d4cd-full-20261117.json",
+      "sha256": "f28e202542356ff06722a0c3863fb6a76e5f11fcadd7f03aa8798da4079ccc78",
+      "bytes": 4333,
+      "rowCount": 21
+    },
+    {
+      "id": "sd-hz-luxi-20250627",
+      "filename": "shandong-luxi-20250627.csv",
+      "sha256": "780fd0150064bbb7946e15c51491412f305726019914863d2eba885e3130c2fc",
+      "bytes": 3199,
+      "rowCount": 23
+    },
+    {
+      "id": "sd-taian-20250724",
+      "filename": "shandong-taian-20250724.csv",
+      "sha256": "4a257ac2ee58ce604beea9b7e7a7f28b1048868d58bce51730d17303ddbd9e65",
+      "bytes": 11662,
+      "rowCount": 93
+    },
+    {
+      "id": "sd-weifang-20261110",
+      "filename": "shandong-weifang-20261110.csv",
+      "sha256": "d69e0811b02302c3f9d22f93ef3dd949e0dcecfa1ff26fe44bc2c695e1c1f091",
+      "bytes": 21887,
+      "rowCount": 187
+    },
+    {
+      "id": "tj-nankai-20220411",
+      "filename": "tianjin-nankai-preview-20261117.html",
+      "sha256": "a8ad003337e11ac5e270f56f134839e1280846a3e623a2c39e459d91e8256cf8",
+      "bytes": 65220,
+      "rowCount": 20
+    },
+    {
+      "id": "zj-prov-20260902",
+      "filename": "zhejiang-provincial-yljg-20260902.csv",
+      "sha256": "ca151f6b8a03715be2bc14a1c466ee53d6d3a34a52b5fb53df5a4f91d89c047f",
+      "bytes": 114573,
+      "rowCount": 1147
+    },
+    {
+      "id": "ah-sc-20261014",
+      "filename": "anhui-shucheng-catalog-preview-20261117.html",
+      "sha256": "5ee9d2902167ab88e16ed4b3aba0fe714d6bb3d944a146373611582cd6aa0bc0",
+      "bytes": 7206,
+      "rowCount": 12
+    },
+    {
+      "id": "sd-jinan-20250721",
+      "filename": "shandong-jinan-202507210938.csv",
+      "sha256": "939c9aac194b05cce5eb655bf7843694c39601c4710310e23a55658acde58761",
+      "bytes": 11655,
+      "rowCount": 135
+    },
+    {
+      "id": "zj-wz-20220826",
+      "filename": "wenzhou-care-homes-6724-current-20261117.zip",
+      "sha256": "2f5cfcf1810f85f733c5b487cdfcb2138b867266fe2bd017fdfb6a0e851e04c0",
+      "bytes": 44182,
+      "rowCount": 196
+    }
+  ]
+}
