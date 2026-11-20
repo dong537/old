@@ -13,6 +13,8 @@ test('production build phase rejects private alias despite NODE_ENV=development'
     if (local.distDir !== '.next-local') process.exit(13);
     const alias = local.webpack({ resolve: { alias: {} } }).resolve.alias['@company-data'];
     if (!alias.endsWith('companies-local.ts')) process.exit(14);
+    const mcaAlias = local.webpack({ resolve: { alias: {} } }).resolve.alias['@mca-preview-data'];
+    if (!mcaAlias.endsWith('mca-preview-local.ts')) process.exit(15);
   `;
   assert.doesNotThrow(() => execFileSync(process.execPath, ['--input-type=module', '-e', script], {
     cwd: resolve('.'), encoding: 'utf8',
@@ -27,6 +29,8 @@ test('public build always aliases the public no-company implementation', () => {
     if (publicConfig.distDir !== '.next') process.exit(21);
     const alias = publicConfig.webpack({ resolve: { alias: {} } }).resolve.alias['@company-data'];
     if (!alias.endsWith('companies-public.ts')) process.exit(22);
+    const mcaAlias = publicConfig.webpack({ resolve: { alias: {} } }).resolve.alias['@mca-preview-data'];
+    if (!mcaAlias.endsWith('mca-preview-public.ts')) process.exit(23);
   `;
   assert.doesNotThrow(() => execFileSync(process.execPath, ['--input-type=module', '-e', script], {
     cwd: resolve('.'), encoding: 'utf8',

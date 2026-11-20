@@ -25,6 +25,9 @@ const config = (phase) => {
       config.resolve.alias['@company-data'] = path.resolve(
         process.cwd(), privatePreview ? 'lib/companies-local.ts' : 'lib/companies-public.ts',
       );
+      config.resolve.alias['@mca-preview-data'] = path.resolve(
+        process.cwd(), privatePreview ? 'lib/mca-preview-local.ts' : 'lib/mca-preview-public.ts',
+      );
       return config;
     },
   };

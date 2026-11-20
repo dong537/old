@@ -105,6 +105,25 @@ test('public scan rejects private-only schema markers even without private input
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
+test('public scan blocks MCA raw snapshots and unreviewed detail pages', async () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'eldercare-mca-isolation-'));
+  try {
+    mkdirSync(path.join(dir, '_next'), { recursive: true });
+    writeFileSync(path.join(dir, '_next', 'leak.js'), 'private_mca_observed_institutions');
+    await assert.rejects(scanPublicOutput(dir, []), /MCA私有/);
+    rmSync(path.join(dir, '_next', 'leak.js'));
+    const mca = path.join(dir, 'data', 'mca-institutions');
+    mkdirSync(mca, { recursive: true });
+    writeFileSync(path.join(mca, 'index.json'), '{}');
+    await assert.rejects(scanPublicOutput(dir, []), /MCA数据/);
+    rmSync(path.join(dir, 'data'), { recursive: true });
+    const detail = path.join(dir, 'quanguo', 'mca-preview', 'sample-id');
+    mkdirSync(detail, { recursive: true });
+    writeFileSync(path.join(detail, 'index.html'), '<p>sample</p>');
+    await assert.rejects(scanPublicOutput(dir, []), /MCA数据或详情页/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
 test('public scan accepts an approved QCC detail projection and rejects contacts', async () => {
   const dir = mkdtempSync(path.join(tmpdir(), 'eldercare-qcc-isolation-'));
   try {

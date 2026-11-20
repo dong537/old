@@ -44,21 +44,22 @@ export function headerSearchHref(searchRoute: string, q: string, currentPathname
   return searchRoute + (next.size ? '?' + next : '');
 }
 
-function SiteHeaderContent({ publishedAt, searchKeyword }: { publishedAt: string; searchKeyword: string }) {
+function SiteHeaderContent({ publishedAt, searchKeyword, showMcaPreview }: { publishedAt: string; searchKeyword: string; showMcaPreview: boolean }) {
   const pathname = logicalPathname(usePathname());
   const isHomeRoute = pathname === '/';
   const isServiceRoute = pathname === '/guangzhou/shangmen' || pathname.startsWith('/guangzhou/shangmen/');
   const isProvinceRoute = pathname === '/guangdong/jigou' || pathname.startsWith('/guangdong/jigou/');
   const isNationalOfficialRoute = pathname === '/quanguo/laiyuan' || pathname.startsWith('/quanguo/laiyuan/');
+  const isMcaPreviewRoute = pathname === '/quanguo/mca-preview' || pathname.startsWith('/quanguo/mca-preview/');
   const isInstitutionReferenceRoute = pathname === '/quanguo/cankao' || pathname.startsWith('/quanguo/cankao/');
   const isQccRoute = pathname === '/guangdong/zhuti' || pathname.startsWith('/guangdong/zhuti/');
   const isNationalQccRoute = pathname === '/quanguo/zhuti' || pathname.startsWith('/quanguo/zhuti/');
-  const ownsSearch = ['/guangzhou/jigou', '/guangzhou/shangmen', '/guangdong/jigou', '/guangdong/zhuti', '/quanguo/cankao', '/quanguo/laiyuan', '/quanguo/zhuti'].includes(pathname.replace(/\/$/, ''));
+  const ownsSearch = ['/guangzhou/jigou', '/guangzhou/shangmen', '/guangdong/jigou', '/guangdong/zhuti', '/quanguo/cankao', '/quanguo/laiyuan', '/quanguo/zhuti'].includes(pathname.replace(/\/$/, '')) || isMcaPreviewRoute;
   const searchRoute = isServiceRoute ? '/guangzhou/shangmen/' : isProvinceRoute || isNationalOfficialRoute ? '/quanguo/laiyuan/' : isQccRoute || isNationalQccRoute ? '/quanguo/zhuti/' : '/quanguo/cankao/';
-  const scopeLabel = isHomeRoute || isInstitutionReferenceRoute ? '全国养老机构线索' : isNationalOfficialRoute || isProvinceRoute ? '全国官方来源' : isNationalQccRoute || isQccRoute ? '全国登记主体候选' : isServiceRoute ? '广州养老服务记录' : '机构档案';
+  const scopeLabel = isMcaPreviewRoute ? '全国平台已观察记录 · 本机预览' : isHomeRoute || isInstitutionReferenceRoute ? '全国养老机构线索' : isNationalOfficialRoute || isProvinceRoute ? '全国官方来源' : isNationalQccRoute || isQccRoute ? '全国登记主体候选' : isServiceRoute ? '广州养老服务记录' : '机构档案';
   const router = useRouter();
   const [q, setQ] = useState(searchKeyword);
-  const links = (mobile: boolean) => nav.map(item => {
+  const links = (mobile: boolean) => (showMcaPreview ? [...nav, { href: '/quanguo/mca-preview/', name: '全国平台预览' }] : nav).map(item => {
     const current = item.href === '/' ? pathname === '/' : pathname === item.href.slice(0, -1) || pathname.startsWith(item.href);
     const cls = mobile
       ? 'block rounded-md px-3 py-2.5 no-underline ' + (current ? 'bg-brand-tint font-semibold text-brand-ink' : 'text-ink')
@@ -89,14 +90,14 @@ function SiteHeaderContent({ publishedAt, searchKeyword }: { publishedAt: string
     </div>}
   </header>;
 }
-function SiteHeaderWithParams({ publishedAt }: { publishedAt: string }) {
+function SiteHeaderWithParams({ publishedAt, showMcaPreview }: { publishedAt: string; showMcaPreview: boolean }) {
   const pathname = usePathname();
   const searchKeyword = useSearchParams().get('q') ?? '';
-  return <SiteHeaderContent key={pathname + ':' + searchKeyword} publishedAt={publishedAt} searchKeyword={searchKeyword} />;
+  return <SiteHeaderContent key={pathname + ':' + searchKeyword} publishedAt={publishedAt} searchKeyword={searchKeyword} showMcaPreview={showMcaPreview} />;
 }
 
-export function SiteHeader({ publishedAt }: { publishedAt: string }) {
-  return <Suspense fallback={<SiteHeaderContent publishedAt={publishedAt} searchKeyword="" />}>
-    <SiteHeaderWithParams publishedAt={publishedAt} />
+export function SiteHeader({ publishedAt, showMcaPreview = false }: { publishedAt: string; showMcaPreview?: boolean }) {
+  return <Suspense fallback={<SiteHeaderContent publishedAt={publishedAt} searchKeyword="" showMcaPreview={showMcaPreview} />}>
+    <SiteHeaderWithParams publishedAt={publishedAt} showMcaPreview={showMcaPreview} />
   </Suspense>;
 }

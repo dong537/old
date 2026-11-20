@@ -14,6 +14,14 @@ const privateMarkers = [
   'companyCreditCode', 'paidInCapital', 'enterpriseType', 'candidateName',
   'relationshipVerified', 'institutionStatuses', '实缴资本', '登记机关',
 ];
+const mcaPrivateMarkers = [
+  'private_mca_observed_institutions', 'data/private/generated/mca-observed-catalog',
+  'mca-private-raw-20261119',
+];
+const allowedMcaPreviewFiles = new Set([
+  'quanguo/mca-preview/index.html', 'quanguo/mca-preview/index.txt',
+  'quanguo/mca-preview/unavailable/index.html', 'quanguo/mca-preview/unavailable/index.txt',
+]);
 const qccPath = /^data\/qcc\/(?:index\.v1\.json|links\.v1\.json|chunk-\d{3}\.v1\.json)$/;
 const qccIndexFields = ['id', 'rowNumber', 'name', 'city', 'district', 'subjectType', 'registrationStatus', 'chunk'];
 const qccDetailFields = [
@@ -610,6 +618,10 @@ export async function scanPublicOutput(directory: string, privateIdentifiers: st
       if (relative.startsWith('data/raw/') || relative.startsWith('data/private/')) {
         throw new Error('公开输出含私有原件目录：' + relative);
       }
+      if (relative.startsWith('data/mca-') ||
+        (relative.startsWith('quanguo/mca-preview/') && !allowedMcaPreviewFiles.has(relative))) {
+        throw new Error('公开输出含未经审核的MCA数据或详情页：' + relative);
+      }
       if (/\.(?:csv|xls|xlsx|docx)$/i.test(relative)) throw new Error('公开输出含未经批准的CSV/XLSX/DOCX原件：' + relative);
       if (/\.(?:html|pdf)$/i.test(relative) && officialRawHashes.size > 0) {
         const rawHash = createHash('sha256').update(await readFile(file)).digest('hex');
@@ -619,6 +631,9 @@ export async function scanPublicOutput(directory: string, privateIdentifiers: st
         }
       }
       const content = (await readFile(file, 'utf8')).replace(/\\u([\da-f]{4})/gi, (_, hex: string) => String.fromCharCode(Number.parseInt(hex, 16)));
+      if (mcaPrivateMarkers.some(marker => content.includes(marker))) {
+        throw new Error('公开输出发现MCA私有快照标记，停止发布：' + relative);
+      }
       if (relative === 'data/guangdong-source-records.v1.json') guangdongReferenceContent = content;
       if (relative.startsWith('data/qcc/')) {
         if (!qccPath.test(relative)) throw new Error('QCC投影目录含未经批准文件：' + relative);

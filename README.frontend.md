@@ -19,6 +19,8 @@ npm run dev
 
 三类结果必须分清：全国机构**来源线索**、地方**官方来源观察记录**、企查查**登记主体候选**。它们不是同一份已核验机构名录，不能相加、自动合并或据同名推断在营关系。广州 235 家名单是独立的官方历史快照。备案床位不等于当前空床；预收费“是／否／未知”不是金额；未知也不等于 0。页面上的来源、资料期和原文出口是核心内容，不能被视觉改版移到难找的位置。
 
+本机私有开发预览另有 `/quanguo/mca-preview/`：消费已封存的全国养老服务信息平台观察快照，按平台 ID 显示列表、可用详情、原字段与采集证据。它不并入上述公开目录，当前快照固定 `publishable=false`，不代表全国全量或当前在营。镜像更新后运行 `python scripts/build-mca-observed-catalog.py --mirror "镜像目录绝对路径"`，再用 `npm run dev:private` 在 loopback 开发服务器查看；私有快照仅在 `data/private/generated/mca-observed-catalog/`，不能复制到 `public/data/`。缺详情的记录只显示已取得的列表字段。
+
 ## 找代码
 
 | 任务 | 入口 |
@@ -28,6 +30,7 @@ npm run dev
 | 广州官方名单、档案、对比 | `app/guangzhou/`、`components/DirectoryView.tsx`、`DirectoryFilters.tsx`、`InstitutionList.tsx`、`ComparisonView.tsx`、`lib/search.ts` |
 | 全国机构线索 | `app/quanguo/cankao/`、`components/InstitutionReference*`、`lib/institution-reference-*` |
 | 全国官方来源 | `app/quanguo/laiyuan/`、`components/NationalOfficial*`、`lib/national-official-*` |
+| 全国平台已观察记录（仅本机） | `app/quanguo/mca-preview/`、`components/McaPreview*`、`lib/mca-preview-*`、`scripts/build-mca-observed-catalog.py` |
 | 登记主体候选 | `app/quanguo/zhuti/`、`app/guangdong/zhuti/`、`components/Qcc*`、`lib/qcc-*` |
 | 广东官方来源 | `app/guangdong/jigou/`、`components/Province*`、`lib/province-*` |
 | 广州服务记录与长护险指南 | `app/guangzhou/shangmen/`、`app/guangzhou/changhuxian/`、`components/ServiceDirectoryView.tsx` |
