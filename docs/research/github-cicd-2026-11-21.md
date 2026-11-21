@@ -34,6 +34,7 @@ main → Actions checkout → npm ci → verify:release → out/ + release.txt �
 - GitHub tencent-preview Environment 设置端口 22、账号 eldercare-deploy，并加密保存专用私钥及此前可信、经实际 SSH 握手匹配的 known_hosts 条目。仓库与日志不含私钥正文。
 - 第一次 deploy=true 运行在构建成功后发现 GitHub Runner 经单路 SCP 向腾讯云传输约 6 MiB 耗时数分钟；在版本切换前取消，核对 current 仍是 national-20261118-e2c2dd9e，仅删除本次不完整上传目录。远端直接拉取同一 Actions artifact 的小样本超过 105 秒仍未完成；本机到服务器 8 MiB 的 SCP 与 SSH 流传输均约 2 秒，故瓶颈集中在 GitHub 与服务器跨境路径。后续工作流改为 8 MiB 分片、最多 8 路并发传输，远端重组并核对归档 SHA-256 后才切换；正式再运行结果另记。
 - 上传步骤单独限时 35 分钟，给健康检查与回滚预留作业时间；成功或失败后清理本次运行的远端临时上传目录。清理失败会在 Actions 中显示，但不抹去发布与健康检查的结果。
+- 第二次 deploy=true 运行 44902708072 构建通过，但上传约 112 MiB 时一条 SCP 连接返回 Connection closed；原先的 xargs 因该分片失败而返回 124，未进入归档校验或版本切换。核对旧 current 未变、公开站仍可访问，本次临时目录已清理。下一轮仅为每个分片增加最多三次 SCP 重试和 SSH 保活，完整归档仍须经 SHA-256 校验后才能切换。
 
 ## GitHub 与服务器配置步骤
 

@@ -117,7 +117,18 @@ jobs:
           ssh eldercare-target "mkdir -p $remote_dir"
           scp eldercare.tar.gz.sha256 deploy/release-eldercare.sh "eldercare-target:$remote_dir/"
           split -b 8m -d -a 3 eldercare.tar.gz eldercare.part.
-          printf '%s\0' eldercare.part.* | xargs -0 -P 8 -I '{}' scp -q '{}' "eldercare-target:$remote_dir/"
+          printf '%s\0' eldercare.part.* | xargs -0 -P 8 -n 1 bash -c '
+            part="$2"
+            for attempt in 1 2 3; do
+              if scp -q -o ConnectTimeout=30 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 "$part" "$1"; then
+                exit 0
+              fi
+              echo "Retrying $part after SSH upload failure ($attempt/3)." >&2
+              sleep "$((attempt * 5))"
+            done
+            echo "Failed to upload $part after 3 attempts." >&2
+            exit 1
+          ' _ "eldercare-target:$remote_dir/"
           ssh eldercare-target "cd $remote_dir && cat eldercare.part.* > eldercare.tar.gz && sha256sum -c eldercare.tar.gz.sha256 && rm -f eldercare.part.*"
           ssh eldercare-target "bash $remote_dir/release-eldercare.sh deploy $RELEASE_KEY $GITHUB_SHA $remote_dir"
       - name: Check the public release marker and homepage
