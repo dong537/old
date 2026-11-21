@@ -8,7 +8,7 @@
 
 ## Source of Truth 与接口
 
-- GitHub main 提交及已纳入 Git 的公开来源文件是构建输入；本机 data/private、私有 XLSX、未提交采集结果和缓存不进入 Actions。已有 npm run verify:release 是类型检查、测试、静态构建及公开产物扫描的权威门禁。
+- GitHub main 提交及已纳入 Git 的公开来源文件是构建输入；本机 data/private、私有 XLSX、未提交采集结果和缓存不进入 Actions。已有 npm run verify:release 是常规 CI 的权威门禁。发布作业执行同样的 typecheck、test 和 build/公开产物扫描，但只给 build 注入 /eldercare 前缀；现有 config 和链接测试明确断言无前缀默认值，不能在整组测试期间注入发布前缀。
 - 构建时 NEXT_PUBLIC_ELDERCARE_BASE_PATH=/eldercare；Next.js output: export 生成 out/，在 out/release.txt 写入本次提交 SHA，归档并生成 SHA-256。该标记只用于发布验收。
 - 部署作业只从同一工作流的构建作业下载归档，GitHub Environment 名为 tencent-preview。部署目标固定为 124.223.86.157 的 /var/www/eldercare；端口可由 ELDERCARE_SSH_PORT 变量设定，账号由 ELDERCARE_SSH_USER 变量设定。私钥 ELDERCARE_SSH_PRIVATE_KEY 和经独立核对的主机公钥记录 ELDERCARE_SSH_KNOWN_HOSTS 只能放 Environment Secrets。
 - 远端 deploy-release.sh 只接受数字 run ID 与重试次数构成的 run key、40 位十六进制提交 SHA 和归档目录。先校验 SHA-256、静态首页和 release.txt，写入 releases/gha-<run-key>-<sha>/eldercare/，再原子切换 current 软链接。Nginx 只读 current/eldercare/；已发布目录不原地覆盖。测试时允许用 ELDERCARE_DEPLOY_ROOT 指向临时目录，工作流不传此变量。

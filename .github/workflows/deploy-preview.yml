@@ -20,8 +20,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    env:
-      NEXT_PUBLIC_ELDERCARE_BASE_PATH: /eldercare
     steps:
       - name: Require the reviewed main branch
         run: |
@@ -37,8 +35,12 @@ jobs:
       - run: npm ci
       - name: Test release switching and rollback
         run: bash tests/test-release-eldercare.sh
-      - name: Verify public release
-        run: npm run verify:release
+      - name: Verify types and behavior
+        run: npm run typecheck && npm test
+      - name: Build and scan prefixed static export
+        env:
+          NEXT_PUBLIC_ELDERCARE_BASE_PATH: /eldercare
+        run: npm run build
       - name: Package versioned static export
         run: |
           printf '%s\n' "$GITHUB_SHA" > out/release.txt
