@@ -70,7 +70,7 @@ function chargeItems(value: unknown): boolean {
 function platformDetail(value: unknown): void {
   const item = object(value, '详情字段');
   exact(item, ['identity', 'tags', 'subsidyCode', 'contactName', 'contactPhone', 'pointRaw',
-    'photoCount', 'areaSqm', 'introduction', 'service', 'beds', 'feeSummary', 'charges', 'evaluation'], '详情字段');
+    'photoCount', 'areaSqm', 'introduction', 'service', 'beds', 'feeSummary', 'charges', 'subServices', 'evaluation'], '详情字段');
   const identity = object(item.identity, '身份字段');
   exact(identity, ['facilityType', 'starCode', 'functionPositioning', 'region', 'address'], '身份字段');
   for (const [key, value] of Object.entries(identity)) resolved(value, text, '身份字段.' + key);
@@ -92,6 +92,22 @@ function platformDetail(value: unknown): void {
     resolved(fee.description, text, '费用说明');
   }
   resolved(item.charges, chargeItems, '分项收费');
+  const sub = object(item.subServices, '子服务');
+  exact(sub, ['respite', 'dayCare', 'homeVisit', 'assessment'], '子服务');
+  for (const key of ['respite', 'dayCare', 'homeVisit']) {
+    const block = object(sub[key], '子服务.' + key);
+    exact(block, ['beds', 'nursingBeds', 'fee', 'unit', 'project', 'charges'], '子服务.' + key);
+    resolved(block.beds, number, '子服务床位数');
+    resolved(block.nursingBeds, number, '子服务护理型床位');
+    resolved(block.fee, moneyRange, '子服务费用');
+    if (!text(block.unit)) fail('子服务费用单位错误');
+    resolved(block.project, text, '子服务项目');
+    resolved(block.charges, chargeItems, '子服务收费项');
+  }
+  const assessment = object(sub.assessment, '能力评估');
+  exact(assessment, ['home', 'site'], '能力评估');
+  resolved(assessment.home, number, '上门评估费');
+  resolved(assessment.site, number, '站点评估费');
   const evaluation = object(item.evaluation, '评价');
   exact(evaluation, ['state', 'text', 'count', 'score'], '评价');
   if (!states.has(String(evaluation.state)) || typeof evaluation.text !== 'string') fail('评价状态错误');

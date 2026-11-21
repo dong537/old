@@ -51,7 +51,7 @@ export default async function ProvinceRecordPage({ params }: Props) {
   </div>;
 
   return <div className="institution-detail-page">
-    <nav id="top" tabIndex={-1} aria-label="面包屑" className="flex flex-wrap gap-x-2 bg-[#F68A13] px-5 py-3 text-[13px] text-white sm:px-8 lg:px-20"><a href={sitePath('/quanguo/laiyuan/')} className="text-white hover:text-white">全国官方来源记录</a><span aria-hidden="true">›</span><span>广东省 · {record.city}</span><span aria-hidden="true">›</span><span>来源记录详情</span></nav>
+    <nav id="top" tabIndex={-1} aria-label="面包屑" className="flex flex-wrap gap-x-2 bg-brand px-5 py-3 text-[13px] text-white sm:px-8 lg:px-20"><a href={sitePath('/quanguo/laiyuan/')} className="text-white hover:text-white">全国官方来源记录</a><span aria-hidden="true">›</span><span>广东省 · {record.city}</span><span aria-hidden="true">›</span><span>来源记录详情</span></nav>
     <div className="flex min-w-0 flex-col gap-5">
       <PublicInstitutionHero dto={dto} sourceLabel="来源记录 · 待核线索" sourceTitle={record.evidenceType + ' · 来源记录编号 ' + record.id} sourceDate={record.sourceAsOf} sourceLink={<ProvinceSourceLink url={record.sourceUrl} />} returnHref="/guangdong/jigou/" returnLink={<Suspense fallback={<a href={sitePath('/quanguo/laiyuan/')} className="underlink text-sm">← 返回全国官方来源</a>}><ProvinceReturnToList /></Suspense>}>
         <p className="mb-0 mt-3 max-w-[850px] text-[13px] leading-6 text-body">这是官方来源中的一条原文名称记录。记录编号仅定位这份冻结快照，不是机构或登记主体的统一 ID；不证明当前在营、空床或签约主体。</p>

@@ -80,7 +80,7 @@ function SiteHeaderContent({ publishedAt, searchKeyword, showMcaPreview }: { pub
     return <Link key={item.href} href={item.href} aria-current={current ? 'page' : undefined} className={className}>{item.name}</Link>;
   };
   const allNav = showMcaPreview ? [...primaryNav, ...supportNav, { href: '/quanguo/mca-preview/', name: '全国平台本机预览' }] : [...primaryNav, ...supportNav];
-  return <header className={isHomeRoute ? 'relative z-20 border-b border-transparent bg-transparent' : 'relative z-20 border-b border-brand-line bg-[#FFF8EC]'}>
+  return <header className={isHomeRoute ? 'relative z-20 border-b border-transparent bg-transparent' : 'relative z-20 border-b border-line bg-white shadow-[0_1px_0_rgba(17,32,40,0.04)]'}>
     <div className={isHomeRoute ? 'bg-transparent' : 'portal-header-surface'}>
       <div className="container-site flex min-h-[82px] items-center justify-between gap-5 py-3">
         <div className="shrink-0 origin-left xl:scale-[1.15]"><Logo /></div>
@@ -99,7 +99,7 @@ function SiteHeaderContent({ publishedAt, searchKeyword, showMcaPreview }: { pub
       </details>
       </div>
     </div>
-    <div className={isHomeRoute ? 'border-t border-[#A9604626] bg-transparent' : 'border-t border-brand-line/60 bg-[#FFF4E2]/90'}><div className="container-site">
+    <div className={isHomeRoute ? 'border-t border-line/70 bg-transparent' : 'border-t border-line bg-brand-tint/40'}><div className="container-site">
       <nav aria-label="主导航" className="hidden w-full flex-wrap items-center justify-between gap-x-2 gap-y-0 xl:flex">{primaryNav.map(item => navLink(item, false))}</nav>
     </div></div>
     {!isHomeRoute && !ownsSearch && <div className="border-t border-hair bg-brand-tint/40">

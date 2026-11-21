@@ -7,51 +7,52 @@
   body { @apply bg-page font-sans text-[16px] leading-relaxed text-ink antialiased; font-variant-numeric: tabular-nums; }
   a { @apply text-brand hover:text-brand-dark; }
   :focus-visible { @apply outline outline-[3px] outline-offset-2 outline-brand; }
-  h1, h2, h3 { @apply font-semibold; text-wrap: pretty; }
+  h1, h2, h3 { @apply font-semibold; text-wrap: pretty; letter-spacing: -0.01em; }
   p, dd, li, h1, h2, h3 { overflow-wrap: anywhere; }
   input, select, button { font: inherit; }
   :where(section[id]) { scroll-margin-top: 24px; }
   table { @apply w-full border-collapse; }
   th { @apply bg-brand-tint px-3 py-2 text-left text-[13px] font-semibold text-brand-ink; }
   td { @apply border-t border-hair px-3 py-2.5 align-top; }
+  ::selection { background: #cfe7e5; color: #0a4a4d; }
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 }
 
 @layer components {
-  .portal-header-surface { background: linear-gradient(105deg, #fffaf0 0%, #fff5e6 70%, #fff0db 100%); }
+  .portal-header-surface { background: #ffffff; }
   #main-content:has(> .home-page) { display: block; width: 100%; max-width: none; margin: 0; padding: 0; }
   #main-content:has(> .institution-detail-page) { display: block; width: 100%; max-width: none; margin: 0; padding: 0; }
-  .home-hero { background: linear-gradient(180deg, #f7d5a0, #faf0d7); }
+  .home-hero { background: #eef4f4; border-bottom: 1px solid #dfe9e8; }
   .home-page .home-hero { margin-top: -83px; }
   .container-site { @apply mx-auto w-full max-w-site px-4 sm:px-6 lg:px-8; }
-  .card { @apply rounded-lg border border-line bg-white; }
-  .source-entry { @apply flex min-w-0 flex-col rounded-lg border border-line bg-white p-5 transition-colors hover:border-brand hover:bg-brand-tint/40; }
-  .filter-panel { @apply rounded-lg border border-line bg-white p-4 sm:p-5; }
-  .record-card { @apply overflow-hidden rounded-lg border border-line bg-white transition-colors hover:border-brand-line; }
-  .record-evidence { @apply flex flex-wrap items-center justify-between gap-x-5 gap-y-1 border-t border-hair bg-brand-tint/50 px-5 py-3 text-[13px] text-sub; }
-  .panel { @apply rounded-lg border border-line bg-white; }
+  .card { @apply rounded-card border border-line bg-white shadow-card; }
+  .source-entry { @apply flex min-w-0 flex-col rounded-card border border-line bg-white p-5 shadow-card transition-all hover:border-brand hover:shadow-lift; }
+  .filter-panel { @apply rounded-card border border-line bg-white p-4 shadow-card sm:p-5; }
+  .record-card { @apply overflow-hidden rounded-card border border-line bg-white shadow-card transition-all hover:border-brand-line hover:shadow-lift; }
+  .record-evidence { @apply flex flex-wrap items-center justify-between gap-x-5 gap-y-1 border-t border-hair bg-brand-tint/40 px-5 py-3 text-[13px] text-sub; }
+  .panel { @apply rounded-card border border-line bg-white shadow-card; }
   .section-panel { @apply panel p-5 sm:p-7; }
-  .btn { @apply inline-flex h-11 items-center justify-center gap-1.5 rounded-md px-5 font-semibold no-underline transition-colors disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn { @apply inline-flex h-11 items-center justify-center gap-1.5 rounded-lg px-5 font-semibold no-underline transition-all disabled:cursor-not-allowed disabled:opacity-50; }
   .btn-sm { @apply h-9 px-3.5 text-[13px]; }
-  .btn-primary { @apply btn bg-brand text-white hover:bg-brand-dark hover:text-white; }
+  .btn-primary { @apply btn bg-brand text-white shadow-card hover:bg-brand-dark hover:text-white; }
   .btn-outline { @apply btn border border-brand bg-white text-brand hover:bg-brand-tint; }
-  .btn-ghost { @apply btn border border-line bg-white font-normal text-ink hover:bg-page hover:text-ink; }
+  .btn-ghost { @apply btn border border-line bg-white font-normal text-ink hover:border-[#cbd4d9] hover:bg-page hover:text-ink; }
   .chip { @apply inline-flex items-center gap-1 whitespace-nowrap rounded-md px-2 py-0.5 text-xs; }
-  .input { @apply h-11 w-full min-w-0 rounded-md border border-line bg-white px-3 text-[15px] outline-none focus:border-brand; }
-  .textarea { @apply w-full rounded-md border border-line bg-white px-3 py-2 text-[15px] outline-none focus:border-brand; }
+  .input { @apply h-11 w-full min-w-0 rounded-lg border border-line bg-white px-3 text-[15px] outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/15; }
+  .textarea { @apply w-full rounded-lg border border-line bg-white px-3 py-2 text-[15px] outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/15; }
   .section { @apply card flex scroll-mt-16 flex-col gap-4 p-5 sm:p-6; }
   .table-wrap { @apply -mx-1 overflow-x-auto; }
-  .field { @apply min-h-12 w-full min-w-0 rounded-md border border-[#B9A08B] bg-white px-3 py-2 text-ink; }
+  .field { @apply min-h-12 w-full min-w-0 rounded-lg border border-line bg-white px-3 py-2 text-ink outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/15; }
   .label { @apply mb-2 block text-sm font-semibold; }
-  .eyebrow { @apply text-sm font-medium tracking-wide text-brand; }
+  .eyebrow { @apply text-[13px] font-medium tracking-[0.08em] text-brand; }
   .note { @apply text-sm leading-relaxed text-sub; }
   .tag { @apply inline-flex rounded-md border border-brand-line bg-brand-tint px-2 py-0.5 text-xs font-medium text-brand-ink; }
-  .notice { @apply rounded-md border border-caution-line bg-caution-bg px-4 py-3 text-sm text-caution; }
+  .notice { @apply rounded-lg border border-caution-line bg-caution-bg px-4 py-3 text-sm text-caution; }
   .directory-workspace { @apply grid min-w-0 gap-5 lg:grid-cols-[248px_minmax(0,1fr)] lg:items-start; }
   .directory-sidebar { @apply min-w-0 lg:sticky lg:top-5; }
   .directory-results { @apply flex min-w-0 flex-col gap-4; }
   .results-heading { @apply flex flex-wrap items-baseline justify-between gap-2 border-b border-line pb-3; }
-  .source-rule { @apply border-l-[3px] border-brand bg-brand-tint px-4 py-3 text-[13px] leading-6 text-body; }
+  .source-rule { @apply rounded-r-md border-l-[3px] border-brand bg-brand-tint px-4 py-3 text-[13px] leading-6 text-body; }
   .underlink { @apply underline decoration-brand-line underline-offset-4 hover:decoration-brand; }
   .detail-grid { @apply grid gap-x-8 gap-y-5 sm:grid-cols-2; }
   .detail-label { @apply mb-1 text-sm text-sub; }

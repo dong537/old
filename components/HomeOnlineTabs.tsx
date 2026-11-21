@@ -10,7 +10,7 @@ const tabs = [
 ] as const;
 type TabId = typeof tabs[number]['id'];
 
-const guideLink = 'inline-flex min-h-12 items-center justify-between gap-3 border-l-[3px] border-[#E87919] bg-[#FFF1D8] px-4 py-2 text-[14px] text-[#8F321D] no-underline hover:bg-[#FFE8BD]';
+const guideLink = 'inline-flex min-h-12 items-center justify-between gap-3 rounded-md border-l-[3px] border-brand bg-brand-tint/70 px-4 py-2 text-[14px] text-brand-ink no-underline transition-colors hover:bg-brand-tint';
 
 export function HomeOnlineTabs() {
   const [active, setActive] = useState<TabId>('personal');
@@ -27,13 +27,13 @@ export function HomeOnlineTabs() {
   }
 
   return <section id="online-services" aria-labelledby="online-services-title" className="min-w-0">
-    <h2 id="online-services-title" className="m-0 text-[23px] font-semibold text-[#C7112D]">在线办理</h2>
-    <div role="tablist" aria-label="在线办理类别" className="mt-5 flex gap-5 border-b border-[#EAD8BE] sm:gap-7">
+    <h2 id="online-services-title" className="m-0 text-[20px] font-semibold text-ink">在线办理</h2>
+    <div role="tablist" aria-label="在线办理类别" className="mt-5 flex gap-5 border-b border-line sm:gap-7">
       {tabs.map((tab, index) => <button key={tab.id} ref={element => { tabRefs.current[index] = element; }}
         id={'online-tab-' + tab.id} role="tab" type="button" aria-selected={active === tab.id}
         aria-controls={'online-panel-' + tab.id} tabIndex={active === tab.id ? 0 : -1}
         onClick={() => setActive(tab.id)} onKeyDown={event => handleKey(event, index)}
-        className={'min-h-11 border-b-[3px] bg-transparent px-1 text-[15px] font-semibold ' + (active === tab.id ? 'border-[#E87919] text-[#A4541D]' : 'border-transparent text-body hover:text-brand')}>{tab.label}</button>)}
+        className={'min-h-11 border-b-[3px] bg-transparent px-1 text-[15px] font-semibold transition-colors ' + (active === tab.id ? 'border-brand text-brand' : 'border-transparent text-body hover:text-brand')}>{tab.label}</button>)}
     </div>
     <div id="online-panel-personal" role="tabpanel" aria-labelledby="online-tab-personal" hidden={active !== 'personal'} className={active === 'personal' ? 'grid gap-3 pt-4' : 'hidden'}>
       <p className="m-0 text-[13px] leading-6 text-body">官网办理事项与地区资格请到原站核对；本站不接收申请。</p>

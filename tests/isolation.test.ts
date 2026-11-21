@@ -170,7 +170,14 @@ test('public scan accepts only a complete partial MCA observation projection', a
       service: { content: missing(), team: missing(), hours: missing(), scope: missing(), explanation: missing() },
       beds: { total: missing(), dayCare: missing(), fullCare: missing(), nursing: missing() },
       feeSummary: ['04', '02', '01', '03'].map(code => ({ code, label: code, range: missing(), description: missing() })),
-      charges: missing(), evaluation: { state: 'missing', text: '未提供', count: missing(), score: missing() },
+      charges: missing(),
+      subServices: {
+        respite: { beds: missing(), nursingBeds: missing(), fee: missing(), unit: '元/天', project: missing(), charges: missing() },
+        dayCare: { beds: missing(), nursingBeds: missing(), fee: missing(), unit: '元/天', project: missing(), charges: missing() },
+        homeVisit: { beds: missing(), nursingBeds: missing(), fee: missing(), unit: '元/次', project: missing(), charges: missing() },
+        assessment: { home: missing(), site: missing() },
+      },
+      evaluation: { state: 'missing', text: '未提供', count: missing(), score: missing() },
     },
   };
   try {

@@ -49,7 +49,7 @@ export default async function InstitutionPage({ params }: Props) {
       : <span>原表未提供电话</span>;
 
   return <div className="institution-detail-page">
-    <nav id="top" tabIndex={-1} aria-label="面包屑" className="flex flex-wrap gap-x-2 bg-[#F68A13] px-5 py-3 text-[13px] text-white sm:px-8">
+    <nav id="top" tabIndex={-1} aria-label="面包屑" className="flex flex-wrap gap-x-2 bg-brand px-5 py-3 text-[13px] text-white sm:px-8">
       <a href={sitePath('/guangzhou/jigou/')} className="text-white hover:text-white">广州机构名单</a><span aria-hidden="true">›</span>
       <a href={sitePath('/guangzhou/jigou/?district=' + encodeURIComponent(item.district))} className="text-white hover:text-white">{item.district}</a><span aria-hidden="true">›</span><span>机构详情</span>
     </nav>

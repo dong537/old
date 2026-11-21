@@ -59,6 +59,20 @@ export interface McaPreviewChargeItem {
   standard: string | null;
 }
 
+/**
+ * 平台详情里的子服务块（喘息 / 日托 / 上门）。
+ * 字段对应来源原件：喘息 chuangXiOrgVo、日托 riTuoOrgVo、上门 homeServiceOrgDetailVo。
+ * 注意：这三块与养老机构主档并列，不并入主档床位与费用。
+ */
+export interface McaPreviewSubServiceDto {
+  beds: McaPreviewResolved<number>;
+  nursingBeds: McaPreviewResolved<number>;
+  fee: McaPreviewResolved<[number, number]>;
+  unit: string;
+  project: McaPreviewResolved<string>;
+  charges: McaPreviewResolved<McaPreviewChargeItem[]>;
+}
+
 export interface McaPreviewPlatformDetailDto {
   identity: {
     facilityType: McaPreviewResolved<string>;
@@ -91,6 +105,16 @@ export interface McaPreviewPlatformDetailDto {
   feeSummary: { code: '04' | '02' | '01' | '03'; label: string;
     range: McaPreviewResolved<[number, number]>; description: McaPreviewResolved<string> }[];
   charges: McaPreviewResolved<McaPreviewChargeItem[]>;
+  /** 喘息、日托、上门、能力评估四块，来自平台详情的并列子对象 */
+  subServices: {
+    respite: McaPreviewSubServiceDto;
+    dayCare: McaPreviewSubServiceDto;
+    homeVisit: McaPreviewSubServiceDto;
+    assessment: {
+      home: McaPreviewResolved<number>;
+      site: McaPreviewResolved<number>;
+    };
+  };
   evaluation: { state: McaPreviewFactState; text: string;
     count: McaPreviewResolved<number>; score: McaPreviewResolved<number> };
 }
@@ -309,6 +333,54 @@ function chargeItems(observations: readonly McaPreviewDetailObservation[]): McaP
   return malformed ? { state: 'conflict', value: null, observationCount: observations.length } : parsed;
 }
 
+function nestedNumber(observations: readonly McaPreviewDetailObservation[], parent: string,
+  key: string): McaPreviewResolved<number> {
+  return resolved(observations, 'orgBaseDetail', fields => {
+    const value = numericValue(object(fields[parent])?.[key]);
+    return value === null ? [] : [value];
+  });
+}
+
+/** 子服务费用：原件里 minKey 是下限、maxKey 是上限，这里统一排成 [下限, 上限]。 */
+function nestedFeeRange(observations: readonly McaPreviewDetailObservation[], parent: string,
+  minKey: string, maxKey: string): McaPreviewResolved<[number, number]> {
+  return resolved(observations, 'orgBaseDetail', fields => {
+    const row = object(fields[parent]);
+    if (row === null) return [];
+    const min = numericValue(row[minKey]);
+    const max = numericValue(row[maxKey]);
+    if (min === null || max === null) return [];
+    return [[Math.min(min, max), Math.max(min, max)] as [number, number]];
+  });
+}
+
+function nestedCharges(observations: readonly McaPreviewDetailObservation[], parent: string): McaPreviewResolved<McaPreviewChargeItem[]> {
+  return resolved(observations, 'orgBaseDetail', fields => {
+    const raw = object(fields[parent])?.hae4List;
+    if (!Array.isArray(raw)) return [];
+    const rows = raw.map(object);
+    if (rows.some(row => row === null)) return [];
+    return [rows.map(row => ({
+      id: textValue(row?.axbe4001), name: textValue(row?.axbe4002),
+      description: textValue(row?.axbe4003), standard: textValue(row?.axbe4004),
+    }))];
+  });
+}
+
+function subService(observations: readonly McaPreviewDetailObservation[], parent: string,
+  minKey: string, maxKey: string, unit: string,
+  bedKey: string | null, nursingKey: string | null): McaPreviewSubServiceDto {
+  const missing: McaPreviewResolved<number> = { state: 'missing', value: null, observationCount: 0 };
+  return {
+    beds: bedKey === null ? missing : nestedNumber(observations, parent, bedKey),
+    nursingBeds: nursingKey === null ? missing : nestedNumber(observations, parent, nursingKey),
+    fee: nestedFeeRange(observations, parent, minKey, maxKey),
+    unit,
+    project: nestedString(observations, parent, 'serviceProject'),
+    charges: nestedCharges(observations, parent),
+  };
+}
+
 function mapPlatformDetail(record: McaPreviewIndexRecord, detail: McaPreviewDetail): McaPreviewPlatformDetailDto {
   const observations = detail.detailObservations;
   const listExtras = mapMcaPreviewListExtras(detail);
@@ -373,6 +445,16 @@ function mapPlatformDetail(record: McaPreviewIndexRecord, detail: McaPreviewDeta
       nursing: indexedNumber(careNumber(observations, 'ahae2323'), record.nursingBeds,
         record.conflictFields.includes('nursingBeds') || detail.conflictFields.includes('nursingBeds'), indexObservationCount),
     }, feeSummary, charges: chargeItems(observations),
+    // 四块并列子服务：喘息 / 日托 / 上门 / 能力评估（与原平台详情卡片一一对应）
+    subServices: {
+      respite: subService(observations, 'chuangXiOrgVo', 'axbe9004', 'axbe9003', '元/天', 'ahae0636', 'ahae0637'),
+      dayCare: subService(observations, 'riTuoOrgVo', 'ahae0645', 'ahae0644', '元/天', 'ahae0638', 'ahae0639'),
+      homeVisit: subService(observations, 'homeServiceOrgDetailVo', 'ahae0643', 'ahae0642', '元/次', null, null),
+      assessment: {
+        home: nestedNumber(observations, 'assessmentOrgDetailVo', 'ahae2601'),
+        site: nestedNumber(observations, 'assessmentOrgDetailVo', 'ahae2602'),
+      },
+    },
     evaluation: { state: countConflict || scoreConflict ? 'conflict' : record.evaluationCount === null ? 'missing' : 'observed',
       text: countConflict || scoreConflict ? '平台评价观察值冲突，见原始证据' : evaluation(record) ?? '原平台未提供',
       count: evaluationCount, score: evaluationScore },
