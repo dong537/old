@@ -62,7 +62,7 @@ export function InstitutionReferenceDetailContent({ manifest, record, officialCa
     </div>
   </div>;
   return <div className="institution-detail-page">
-    <nav id="top" tabIndex={-1} aria-label="面包屑" className="flex flex-wrap items-center gap-x-2 bg-[#F28C16] px-5 py-3 text-[13px] text-white sm:px-8 lg:px-20"><a href={sitePath('/quanguo/cankao/')} className="text-white underline-offset-4 hover:text-white hover:underline">全国养老机构来源线索</a><span aria-hidden="true">›</span><span>{provinceName} · {cityName}</span><span aria-hidden="true">›</span><span>工作表第 {record.sourceRow} 行</span></nav>
+    <nav id="top" tabIndex={-1} aria-label="面包屑" className="flex flex-wrap items-center gap-x-2 bg-brand px-5 py-3 text-[13px] text-white sm:px-8 lg:px-20"><a href={sitePath('/quanguo/cankao/')} className="text-white underline-offset-4 hover:text-white hover:underline">全国养老机构来源线索</a><span aria-hidden="true">›</span><span>{provinceName} · {cityName}</span><span aria-hidden="true">›</span><span>工作表第 {record.sourceRow} 行</span></nav>
     <div className="flex min-w-0 flex-col gap-5">
     <PublicInstitutionHero dto={dto} sourceLabel="来源表记录 · 资料时点未知" sourceTitle={manifest.source.title + ' · 工作表第 ' + record.sourceRow + ' 行'} sourceDate={null} returnHref={listHref} returnLabel={'返回线索目录' + (listHref !== '/quanguo/cankao/' ? '（保留筛选）' : '')}>
       <p className="mb-0 mt-3 max-w-[850px] text-[13px] leading-6 text-body">这是来源表中的一条线索，不是官方备案或营业状态证明；此场所与登记主体的关系也未核实。</p>

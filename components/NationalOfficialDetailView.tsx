@@ -41,7 +41,7 @@ export function NationalOfficialDetailContent({ manifest, record, from, cityName
     </div>
   </div>;
   return <div className="institution-detail-page">
-    <nav id="top" tabIndex={-1} aria-label="面包屑" className="flex flex-wrap items-center gap-x-2 bg-[#F28C16] px-5 py-3 text-[13px] text-white sm:px-8 lg:px-20"><a href={sitePath('/quanguo/laiyuan/')} className="text-white underline-offset-4 hover:text-white hover:underline">全国官方来源记录</a><span aria-hidden="true">›</span><span>{source.province} · {cityName ?? source.city ?? '全省'}</span><span aria-hidden="true">›</span><span>来源第 {record.rowNumber} 条</span></nav>
+    <nav id="top" tabIndex={-1} aria-label="面包屑" className="flex flex-wrap items-center gap-x-2 bg-brand px-5 py-3 text-[13px] text-white sm:px-8 lg:px-20"><a href={sitePath('/quanguo/laiyuan/')} className="text-white underline-offset-4 hover:text-white hover:underline">全国官方来源记录</a><span aria-hidden="true">›</span><span>{source.province} · {cityName ?? source.city ?? '全省'}</span><span aria-hidden="true">›</span><span>来源第 {record.rowNumber} 条</span></nav>
     <div className="flex min-w-0 flex-col gap-5">
         <PublicInstitutionHero dto={dto} sourceLabel="官方公开来源 · 历史快照" sourceTitle={source.title + ' · 发布于 ' + (source.publishedAt ?? '原文未说明')} sourceDate={source.asOf} sourceHref={source.url} sourceLinkLabel="打开官方原文核对" returnHref={listHref} returnLabel={'返回来源目录' + (listHref !== '/quanguo/laiyuan/' ? '（保留筛选）' : '')}>
           {officialNameCaution(record) && <p className="mb-0 mt-3 text-[13px] text-caution">{officialNameCaution(record)}</p>}

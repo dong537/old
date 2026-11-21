@@ -8,7 +8,7 @@ function valueText<T>(field: DetailFact<T>, format: (value: T) => string): strin
 
 function SectionHeading({ children, accent = false }: { children: React.ReactNode; accent?: boolean }) {
   return <h2 className={'m-0 text-[19px] text-ink lg:text-[22px] ' + (accent
-    ? 'border-l-[3px] border-[#D81E32] pl-3 font-semibold' : 'font-normal')}>{children}</h2>;
+    ? 'border-l-[3px] border-brand pl-3 font-semibold' : 'font-normal')}>{children}</h2>;
 }
 
 export function PublicInstitutionHero({ dto, sourceLabel, sourceTitle, sourceDate, sourceHref, sourceLinkLabel = '打开来源原文', sourceLink, returnHref, returnLabel = '返回目录', returnLink, contactPhoneNode, children }: {
@@ -26,22 +26,22 @@ export function PublicInstitutionHero({ dto, sourceLabel, sourceTitle, sourceDat
   children?: React.ReactNode;
 }) {
   const profile = dto.profile;
-  return <section id="overview" tabIndex={-1} className="relative overflow-hidden border border-[#EECF9D] bg-[#FFF0D0] bg-[linear-gradient(180deg,#FFF5DE_0%,#FFE7BA_100%)] px-5 py-6 sm:px-8 sm:py-8 lg:px-20 lg:pb-8 lg:pt-10">
+  return <section id="overview" tabIndex={-1} className="relative overflow-hidden border border-line bg-brand-tint bg-[linear-gradient(180deg,#E8F3F2_0%,#F5F7F8_100%)] px-5 py-6 sm:px-8 sm:py-8 lg:px-20 lg:pb-8 lg:pt-10">
     <div className="relative">
       <h1 className="m-0 max-w-[920px] break-words text-[27px] font-semibold leading-tight sm:text-[34px] lg:text-[36px]">{dto.name}</h1>
-      <div className="mt-3 flex flex-wrap items-center gap-2 text-[13px]"><strong className="rounded-sm bg-[#D71930] px-2 py-1 font-semibold text-white">{sourceLabel}</strong><span className="text-body">{sourceTitle} · 资料截至 {sourceDate ?? '原文未说明'}</span></div>
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-[13px]"><strong className="rounded-sm bg-brand px-2 py-1 font-semibold text-white">{sourceLabel}</strong><span className="text-body">{sourceTitle} · 资料截至 {sourceDate ?? '原文未说明'}</span></div>
       <div className="mt-4 flex flex-wrap gap-2 text-[12px]">
-        <span className="rounded-sm border border-[#E5BD82] bg-white/70 px-2 py-1">设施类型：{valueText(profile.facilityType, String)}</span>
-        <span className="rounded-sm border border-[#E5BD82] bg-white/70 px-2 py-1">机构星级：{valueText(profile.starLevel, String)}</span>
-        <span className="rounded-sm border border-[#E5BD82] bg-white/70 px-2 py-1">养老消费补贴：{valueText(profile.subsidyStatus, String)}</span>
+        <span className="rounded-sm border border-brand-line bg-white/70 px-2 py-1">设施类型：{valueText(profile.facilityType, String)}</span>
+        <span className="rounded-sm border border-brand-line bg-white/70 px-2 py-1">机构星级：{valueText(profile.starLevel, String)}</span>
+        <span className="rounded-sm border border-brand-line bg-white/70 px-2 py-1">养老消费补贴：{valueText(profile.subsidyStatus, String)}</span>
         {profile.tags.availability === 'recorded'
           ? profile.tags.value?.length
-            ? profile.tags.value.map(tag => <span key={tag} className="rounded-sm border border-[#E5BD82] bg-white/70 px-2 py-1">{tag}</span>)
-            : <span className="rounded-sm border border-[#E5BD82] bg-white/70 px-2 py-1">机构标签：来源记录 0 项</span>
-          : <span className="rounded-sm border border-[#E5BD82] bg-white/70 px-2 py-1">机构标签：本来源未提供</span>}
+            ? profile.tags.value.map(tag => <span key={tag} className="rounded-sm border border-brand-line bg-white/70 px-2 py-1">{tag}</span>)
+            : <span className="rounded-sm border border-brand-line bg-white/70 px-2 py-1">机构标签：来源记录 0 项</span>
+          : <span className="rounded-sm border border-brand-line bg-white/70 px-2 py-1">机构标签：本来源未提供</span>}
       </div>
       <p className="mb-0 mt-4 text-[14px] leading-6 text-body">功能定位：{valueText(profile.functionPositioning, String)}</p>
-      <dl className="mb-0 mt-4 flex flex-wrap gap-x-6 gap-y-2 border-t border-[#E9D1AA] pt-4 text-[13px] text-body">
+      <dl className="mb-0 mt-4 flex flex-wrap gap-x-6 gap-y-2 border-t border-line pt-4 text-[13px] text-body">
         <div className="flex gap-1"><dt>评价：</dt><dd className="m-0">{dto.reviews.count.availability === 'recorded' && dto.reviews.count.value !== null ? dto.reviews.count.value.toLocaleString('zh-CN') + ' 条（来源记录）' : '评价未提供'}</dd></div>
         <div className="flex gap-1"><dt>评分：</dt><dd className="m-0">{valueText(dto.reviews.score, value => value.toLocaleString('zh-CN'))}</dd></div>
         <div className="flex gap-1"><dt>机构面积：</dt><dd className="m-0">{valueText(profile.areaSqm, value => value.toLocaleString('zh-CN') + ' ㎡')}</dd></div>
@@ -51,8 +51,8 @@ export function PublicInstitutionHero({ dto, sourceLabel, sourceTitle, sourceDat
       </dl>
       {children}
       {profile.photos.availability === 'recorded' && profile.photos.value?.length
-        ? <ul aria-label="机构照片" className="m-0 mt-5 grid max-w-[860px] list-none grid-cols-1 gap-3 p-0 sm:grid-cols-3">{profile.photos.value.map((photo, index) => <li key={photo.url + index} className="overflow-hidden border border-[#D8B887] bg-white/60"><img src={photo.url} alt={photo.alt} loading="lazy" className="aspect-[16/9] w-full object-cover" /><p className="m-0 px-3 py-2 text-[13px] text-body">{photo.alt}</p></li>)}</ul>
-        : <div aria-label="机构照片" className="mt-5 flex min-h-36 max-w-[860px] items-center justify-center border border-dashed border-[#D8B887] bg-white/45 px-4 text-center text-[13px] text-body">机构照片：{profile.photos.availability === 'recorded' ? '来源记录 0 张' : '本来源未提供'}</div>}
+        ? <ul aria-label="机构照片" className="m-0 mt-5 grid max-w-[860px] list-none grid-cols-1 gap-3 p-0 sm:grid-cols-3">{profile.photos.value.map((photo, index) => <li key={photo.url + index} className="overflow-hidden border border-line bg-white/60"><img src={photo.url} alt={photo.alt} loading="lazy" className="aspect-[16/9] w-full object-cover" /><p className="m-0 px-3 py-2 text-[13px] text-body">{photo.alt}</p></li>)}</ul>
+        : <div aria-label="机构照片" className="mt-5 flex min-h-36 max-w-[860px] items-center justify-center border border-dashed border-line bg-white/45 px-4 text-center text-[13px] text-body">机构照片：{profile.photos.availability === 'recorded' ? '来源记录 0 张' : '本来源未提供'}</div>}
       <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px] font-semibold">
         {sourceHref && <a href={sourceHref} target="_blank" rel="noopener noreferrer">{sourceLinkLabel} ↗</a>}
         {sourceLink}
@@ -63,7 +63,7 @@ export function PublicInstitutionHero({ dto, sourceLabel, sourceTitle, sourceDat
 }
 
 export function PublicInstitutionBottomNav({ name, items }: { name: string; items: readonly { id: string; label: string }[] }) {
-  return <nav aria-label="本页目录" className="flex min-w-0 max-w-full items-center justify-between gap-5 overflow-hidden border-t border-[#E4C799] bg-[#FFF9EB] px-4 py-3 sm:px-6">
+  return <nav aria-label="本页目录" className="flex min-w-0 max-w-full items-center justify-between gap-5 overflow-hidden border-t border-line bg-brand-tint px-4 py-3 sm:px-6">
     <strong className="hidden max-w-[250px] truncate text-[14px] lg:block" title={name}>{name}</strong>
     <div className="flex min-w-0 gap-4 overflow-x-auto whitespace-nowrap text-[13px] font-semibold sm:gap-6">{items.map(item => <a key={item.id} href={sitePath('#' + item.id)}>{item.label}</a>)}</div>
   </nav>;

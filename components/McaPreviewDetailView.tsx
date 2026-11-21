@@ -88,10 +88,10 @@ function PhotoStrip({ count }: { count: McaPreviewResolved<number> }) {
   const message = count.state === 'conflict' ? '图片记录观察值冲突，暂不展示'
     : count.value === null ? '本来源未提供可公开的机构照片'
       : count.value === 0 ? '原平台记录 0 张图片' : null;
-  if (message) return <div aria-label="机构照片" role="group" className="mt-5 flex min-h-28 max-w-[860px] items-center justify-center border border-dashed border-[#D9B98D] bg-white/65 px-4 py-5 text-center text-sm text-sub sm:min-h-36">{message}</div>;
+  if (message) return <div aria-label="机构照片" role="group" className="mt-5 flex min-h-28 max-w-[860px] items-center justify-center border border-dashed border-line bg-white/65 px-4 py-5 text-center text-sm text-sub sm:min-h-36">{message}</div>;
   return <div aria-label="机构照片" role="group" className="mt-5 max-w-[860px]">
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-      {Array.from({ length: Math.min(count.value ?? 0, 3) }, (_, index) => <div key={index} aria-label={'图片记录 ' + (index + 1)} className="flex aspect-[16/9] items-center justify-center rounded-sm border border-dashed border-[#D9B98D] bg-white/65 px-3 text-center text-sm text-sub">原平台图片 {index + 1} · 暂未展示</div>)}
+      {Array.from({ length: Math.min(count.value ?? 0, 3) }, (_, index) => <div key={index} aria-label={'图片记录 ' + (index + 1)} className="flex aspect-[16/9] items-center justify-center rounded-sm border border-dashed border-line bg-white/65 px-3 text-center text-sm text-sub">原平台图片 {index + 1} · 暂未展示</div>)}
     </div>
     <p className="mb-0 mt-2 text-xs text-sub">平台含 {count.value} 项图片记录；图片地址及公开展示许可尚未核验。</p>
   </div>;
@@ -104,13 +104,13 @@ export function McaPreviewDetailView({ dto }: McaPreviewDetailProps) {
   const tags = platformDetail.tags.value ?? [];
   return <div className="institution-detail-page flex min-w-0 flex-col gap-0 overflow-x-clip bg-white">
     <nav aria-label="面包屑" className="flex flex-wrap gap-x-2 bg-brand px-5 py-2.5 text-sm text-white sm:px-8 lg:px-20"><a href={sitePath('/quanguo/mca-preview/')} className="text-white underline-offset-4 hover:text-white hover:underline">平台观察记录</a><span aria-hidden="true">›</span><span className="min-w-0 break-words">{card.displayName}</span></nav>
-    <header className="min-w-0 border-b border-line bg-[linear-gradient(120deg,#FFF7E6_0%,#FFEAC2_100%)] px-5 py-6 sm:px-8 sm:py-8 lg:px-20 lg:py-10">
+    <header className="min-w-0 border-b border-line bg-[linear-gradient(120deg,#E8F3F2_0%,#F5F7F8_100%)] px-5 py-6 sm:px-8 sm:py-8 lg:px-20 lg:py-10">
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:gap-x-5">
         <div className="min-w-0 w-full sm:w-auto sm:flex-1">
           <h1 className="m-0 break-words text-[27px] font-semibold leading-tight sm:text-[34px] lg:text-[36px]">{card.displayName}</h1>
           <div className="mt-3 flex flex-wrap items-center gap-2 text-sm"><span className="rounded-sm bg-brand px-2 py-0.5 font-semibold text-white">民政部平台采集观察</span><span className="text-sub">{card.hasDetail ? '已存双端点详情' : '尚无双端点详情'}</span></div>
         </div>
-        <a className="inline-flex min-h-10 items-center rounded border border-[#E4A969] bg-white/75 px-3 text-sm font-semibold" href={mcaOfficialDetailHref(card.mcaId)} target="_blank" rel="noopener noreferrer">打开官网原页核对 ↗</a>
+        <a className="inline-flex min-h-10 items-center rounded border border-brand-line bg-white/75 px-3 text-sm font-semibold" href={mcaOfficialDetailHref(card.mcaId)} target="_blank" rel="noopener noreferrer">打开官网原页核对 ↗</a>
       </div>
       <div className="mt-4 flex flex-wrap gap-2 text-xs text-body">
         <span className="rounded-sm border border-line bg-white/70 px-2 py-1">设施类型原标签：{valueText(platformDetail.identity.facilityType, String)}</span>
@@ -128,7 +128,7 @@ export function McaPreviewDetailView({ dto }: McaPreviewDetailProps) {
     </header>
     {conflictLabels.length > 0 && <div className="border-x border-b border-caution-line bg-caution-bg px-5 py-3 text-sm text-caution sm:px-8" role="alert">以下索引字段有冲突，摘要不选边：{conflictLabels.join('、')}。请展开原始证据逐项核对。</div>}
 
-    <section className="min-w-0 border-b border-hair bg-white px-5 py-7 sm:px-8 lg:px-20 lg:py-9" aria-labelledby="mca-preview-fees"><h2 id="mca-preview-fees" className="m-0 border-l-[3px] border-[#D80B25] pl-3 text-lg font-semibold lg:text-[22px]">机构养老</h2>
+    <section className="min-w-0 border-b border-hair bg-white px-5 py-7 sm:px-8 lg:px-20 lg:py-9" aria-labelledby="mca-preview-fees"><h2 id="mca-preview-fees" className="m-0 border-l-[3px] border-brand pl-3 text-lg font-semibold lg:text-[22px]">机构养老</h2>
       <dl className="m-0 mt-4 flex flex-wrap gap-x-8 gap-y-2 border-b border-hair pb-4 text-sm"><div className="flex items-baseline gap-2"><dt>平台列示总床位</dt><dd className="m-0 font-semibold tabular-nums">{valueText(platformDetail.beds.total, value => value.toLocaleString('zh-CN') + ' 个')}</dd></div><div className="flex items-baseline gap-2"><dt>平台列示护理型床位</dt><dd className="m-0 font-semibold tabular-nums">{valueText(platformDetail.beds.nursing, value => value.toLocaleString('zh-CN') + ' 个')}</dd></div></dl>
       <dl aria-label="月费用摘要（窄屏）" className="m-0 mt-4 divide-y divide-hair border border-hair md:hidden">{platformDetail.feeSummary.map(item => <div key={item.code} className="grid min-w-0 grid-cols-[5.5rem_minmax(0,1fr)] gap-2 px-3 py-3 text-sm"><dt className="font-medium text-body">{item.label}</dt><dd className="m-0 min-w-0 break-words text-right font-semibold tabular-nums text-ink"><span className={item.range.state === 'conflict' ? 'text-caution' : ''}>{feeText(item.range)}</span>{item.range.value?.includes(0) && <span className="block text-xs font-normal text-caution">原值为 0，不代表免费。</span>}{item.description.state !== 'missing' && <span className="block text-xs font-normal text-sub">说明：{valueText(item.description, value => value)}</span>}</dd></div>)}</dl>
       <div className="mt-4 hidden max-w-full overflow-x-auto md:block"><table aria-label="月费用摘要" className="min-w-[560px] border border-hair text-sm"><tbody>{[0, 2].map(start => <tr key={start}>{platformDetail.feeSummary.slice(start, start + 2).map(item => <React.Fragment key={item.code}><th scope="row" className="w-[18%] border-r border-hair bg-white font-medium text-body">{item.label}</th><td className="w-[32%] border-r border-hair text-right font-semibold tabular-nums text-ink"><span className={item.range.state === 'conflict' ? 'text-caution' : ''}>{feeText(item.range)}</span>{item.range.value?.includes(0) && <span className="block text-xs font-normal text-caution">原值为 0，不代表免费。</span>}{item.description.state !== 'missing' && <span className="block text-xs font-normal text-sub">说明：{valueText(item.description, value => value)}</span>}</td></React.Fragment>)}</tr>)}</tbody></table></div>
