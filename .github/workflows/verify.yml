@@ -14,4 +14,6 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Test release switching and rollback
+        run: bash tests/test-release-eldercare.sh
       - run: npm run verify:release
