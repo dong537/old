@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   findReferenceCity, loadReferenceIndex, loadReferenceManifest, loadReferenceProvinceIndexes,
@@ -23,35 +23,67 @@ export function InstitutionReferenceDirectoryContent({ manifest, index, province
   const invalidLocation = Boolean((query.province && !selectedProvince) || (query.city && !selectedCity));
   const result = selectedCity && index ? searchReferenceRecords(index, query) :
     selectedProvince && !query.city && provinceIndexes ? searchReferenceProvinceRecords(manifest, provinceIndexes, query) : null;
+  const filterRef = useRef<HTMLDetailsElement>(null);
+  const hasResult = Boolean(result);
+  useEffect(() => {
+    const filter = filterRef.current;
+    if (!filter) return;
+    const mobile = window.matchMedia('(max-width: 1023px)');
+    const sync = () => { filter.open = !hasResult || !mobile.matches; };
+    sync();
+    mobile.addEventListener('change', sync);
+    return () => mobile.removeEventListener('change', sync);
+  }, [hasResult]);
   const returnTo = result ? referenceListHref({ ...result, page: result.page }) : '/quanguo/cankao/';
   const pendingKeyword = [...(query.q ?? '').trim()].slice(0, 80).join('');
 
-  return <div className="flex flex-col gap-5">
-    <form action={sitePath('/quanguo/cankao/')} method="get" aria-label="选择线索省份和可选城市" className="card grid gap-3 p-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
-      {pendingKeyword && <input type="hidden" name="q" value={pendingKeyword} />}
-      <div className="flex min-w-0 flex-col gap-1"><label htmlFor="reference-province" className="text-[13px] font-semibold">省级地区</label><select id="reference-province" name="province" value={draftProvince} onChange={event => setDraftProvince(event.target.value)} required className="min-h-11 w-full rounded-lg border border-line bg-white px-3 text-[15px]"><option value="">选择省份</option>{manifest.provinces.map(province => <option key={province.slug} value={province.slug}>{province.name}（{province.count.toLocaleString('zh-CN')} 条）</option>)}</select></div>
-      <div className="flex min-w-0 flex-col gap-1"><label htmlFor="reference-city" className="text-[13px] font-semibold">城市或原表地区分组（可选）</label><select key={draftProvince} id="reference-city" name="city" defaultValue={draftProvince === selectedProvince?.slug ? selectedCity?.slug ?? '' : ''} disabled={!draftProvince} className="min-h-11 w-full rounded-lg border border-line bg-white px-3 text-[15px]"><option value="">全部地区</option>{draftCities.map(city => <option key={city.slug} value={city.slug}>{city.name}（{city.count.toLocaleString('zh-CN')} 条）</option>)}</select></div>
-      <button type="submit" className="btn-primary min-h-11 px-5">查看线索</button>
+  return <div className="flex min-w-0 flex-col gap-5">
+    <form key={returnTo + '|' + pendingKeyword} action={sitePath('/quanguo/cankao/')} method="get" role="search" aria-label="检索养老机构来源线索" className="border border-line bg-white px-5 py-4 sm:px-6">
+      {selectedProvince && <input type="hidden" name="province" value={selectedProvince.slug} />}
+      {selectedCity && <input type="hidden" name="city" value={selectedCity.slug} />}
+      <label htmlFor="reference-q" className="mb-2 block text-[14px] font-semibold">机构名称或场所地址</label>
+      <div className="flex min-w-0 flex-col gap-2 sm:flex-row"><input id="reference-q" name="q" type="search" defaultValue={result?.q ?? pendingKeyword} maxLength={80} placeholder="输入机构名称或地址" className="input flex-1" /><button type="submit" className="btn-primary shrink-0">检索线索</button></div>
     </form>
+    <div className="directory-workspace">
+    <aside className="directory-sidebar" aria-label="查找条件">
+      <details ref={filterRef} open className="filter-panel">
+        <summary className="cursor-pointer text-[16px] font-semibold text-ink">查找条件</summary>
+        <div className="mt-4 flex flex-col gap-4 border-t border-hair pt-4">
+    <form action={sitePath('/quanguo/cankao/')} method="get" aria-label="选择线索省份和可选城市" className="flex flex-col gap-3">
+      {pendingKeyword && <input type="hidden" name="q" value={pendingKeyword} />}
+      <div className="flex min-w-0 flex-col gap-1"><label htmlFor="reference-province" className="text-[13px] font-semibold">省级地区</label><select id="reference-province" name="province" value={draftProvince} onChange={event => setDraftProvince(event.target.value)} required className="input"><option value="">选择省份</option>{manifest.provinces.map(province => <option key={province.slug} value={province.slug}>{province.name}（{province.count.toLocaleString('zh-CN')} 条）</option>)}</select></div>
+      <div className="flex min-w-0 flex-col gap-1"><label htmlFor="reference-city" className="text-[13px] font-semibold">城市或原表地区分组（可选）</label><select key={draftProvince} id="reference-city" name="city" defaultValue={draftProvince === selectedProvince?.slug ? selectedCity?.slug ?? '' : ''} disabled={!draftProvince} className="input disabled:bg-page disabled:text-sub"><option value="">全部地区</option>{draftCities.map(city => <option key={city.slug} value={city.slug}>{city.name}（{city.count.toLocaleString('zh-CN')} 条）</option>)}</select></div>
+      <button type="submit" className="btn-primary w-full">查看线索</button>
+    </form>
+        </div>
+      </details>
+    </aside>
+    <div className="directory-results">
     {!result && <p className="m-0 border-l-2 border-brand bg-brand-tint px-4 py-3 text-[14px] text-body" role="note">这是企查查来源线索，不是官方备案名单；资料时点未知，当前在营与床位情况需另行核实。</p>}
     {invalidLocation && <div className="notice" role="alert">地区参数无效，请重新选择省市。<a href={sitePath('/quanguo/cankao/')} className="underlink ml-2">清除条件</a></div>}
     {!selectedProvince && !invalidLocation && <div className="card p-6"><h2 className="m-0 text-lg font-semibold">选择省份</h2>{pendingKeyword && <p className="mt-2 text-body" role="status">先选择省份，再检索“{pendingKeyword}”。</p>}<p className="mt-2 text-body">选定省份后读取该省的来源行；可进一步限定城市或原表地区分组。地市根据原表行政区划和“地区”字段分组，原表未标明的地方单列。</p></div>}
     {result && <>
-      <div className="flex flex-wrap items-baseline justify-between gap-2"><h2 className="m-0 text-lg font-semibold">{selectedProvince?.name} · {selectedCity?.name ?? '全部地区'}</h2><span className="text-[13px] text-sub">此范围 {(selectedCity?.count ?? selectedProvince?.count ?? 0).toLocaleString('zh-CN')} 条来源行</span></div>
-      <form key={result.province + '|' + result.city + '|' + result.q} action={sitePath('/quanguo/cankao/')} method="get" role="search" aria-label="检索养老机构来源线索" className="card grid gap-3 p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end"><input type="hidden" name="province" value={result.province} />{result.city && <input type="hidden" name="city" value={result.city} />}<div className="flex min-w-0 flex-col gap-1"><label htmlFor="reference-q" className="text-[13px] font-semibold">名称、地址或地区</label><input id="reference-q" name="q" type="search" defaultValue={result.q} maxLength={80} placeholder="输入原表名称、地址或地区" className="min-h-11 w-full rounded-lg border border-line px-3 text-[15px] focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20" /></div><button type="submit" className="btn-primary min-h-11 px-5">检索线索</button></form>
+      <div className="results-heading"><h2 className="m-0 text-lg font-semibold">{selectedProvince?.name} · {selectedCity?.name ?? '全部地区'}</h2><span className="text-[13px] text-sub">此范围 {(selectedCity?.count ?? selectedProvince?.count ?? 0).toLocaleString('zh-CN')} 条来源行</span></div>
       {result.q && <p className="m-0 text-[13px] text-sub">当前关键词：{result.q} · <a href={sitePath(referenceListHref({ province: result.province, city: result.city }))} className="underlink">清除关键词</a></p>}
       {result.issues.length > 0 && <div className="notice" role="status">{result.issues.join(' ')} <a href={sitePath(referenceListHref({ province: result.province, city: result.city }))} className="underlink">查看当前地区全部线索</a></div>}
       <div className="flex flex-wrap items-baseline justify-between gap-2"><p className="m-0 text-[15px]" role="status" aria-live="polite">匹配 <b>{result.total}</b> 条来源线索</p><span className="text-[13px] text-sub">按工作表行序展示 · 同名不合并</span></div>
-      <p className="m-0 border-l-2 border-brand bg-brand-tint px-4 py-3 text-[13px] text-body" role="note">{manifest.source.title} · 资料时点未知。来源行不是已核实机构数，原表床位不等于当前空床。列表地址可能因原表空白、含联系方式或以机构名称占位而不展示；原始地址和经纬度未经核实，不能用于导航。</p>
+      <p className="source-rule m-0" role="note">{manifest.source.title} · 资料时点未知。来源行不是已核实机构数，原表床位不等于当前空床。列表地址可能因原表空白、含联系方式或以机构名称占位而不展示；原始地址和经纬度未经核实，不能用于导航。</p>
       {result.total === 0 ? <div className="card p-8 text-center"><h2 className="m-0 text-lg font-semibold">没有找到线索</h2><p className="mt-2 text-body">缩短关键词或换一个地区重试。</p><a href={sitePath(referenceListHref({ province: result.province, city: result.city }))} className="btn-outline mt-3">查看当前地区全部线索</a></div> : <ul className="m-0 flex list-none flex-col gap-3 p-0" aria-label="全国养老机构来源线索列表">{result.items.map(record => {
         const search = new URLSearchParams({ province: result.province, city: record.citySlug, id: record.id, from: returnTo });
         const href = sitePath('/quanguo/cankao/detail/?' + search);
-        return <li key={record.id} className="min-w-0"><article className="card flex flex-col gap-3 p-5">
-          <h2 className="m-0 break-words text-[17px] font-semibold leading-snug"><a href={href} className="text-ink no-underline hover:text-brand">{record.name}</a></h2>
-          <div className="grid gap-2 text-[14px] text-body sm:grid-cols-2"><p className="m-0 break-words">地区：{record.region}</p><p className="m-0 break-words">原表地址字段（未核实）：{record.address ?? '暂无可公开地址'}</p></div>
-          <p className="m-0 text-[14px] text-body">原表床位数 {record.beds.toLocaleString('zh-CN')} 张</p>
-          <footer aria-label="来源与核对" className="mt-1 flex flex-wrap items-center justify-between gap-2 border-t border-hair pt-3 text-[13px]">
-            <span className="break-words text-sub">{manifest.source.title} · 工作表第 {record.sourceRow} 行 · 资料时点未知</span>
+        return <li key={record.id} className="min-w-0"><article className="record-card">
+          <div className="flex flex-col gap-3 px-5 py-4 sm:py-5">
+            <div className="flex flex-wrap items-start justify-between gap-2"><h3 className="m-0 min-w-0 break-words text-[18px] font-semibold leading-snug"><a href={href} className="text-ink no-underline hover:text-brand">{record.name}</a></h3><span className="tag shrink-0">企查查来源线索</span></div>
+            <div className="grid gap-2 text-[14px] text-body"><p className="m-0 break-words">地区：{record.region}</p><p className="m-0 break-words">原表地址字段（未核实）：{record.address ?? '暂无可公开地址'}</p></div>
+            <div className="grid gap-x-6 gap-y-2 border-t border-hair pt-3 text-[14px] text-body sm:grid-cols-2">
+              <p className="m-0">原表床位数 {record.beds.toLocaleString('zh-CN')} 张</p>
+              <p className="m-0">护理型床位：本来源未提供</p>
+              <p className="m-0">月费用：本来源未提供</p>
+              <p className="m-0">机构星级：本来源未提供</p>
+            </div>
+          </div>
+          <footer aria-label="来源与核对" className="record-evidence">
+            <span className="min-w-0 break-words">{manifest.source.title} · 工作表第 {record.sourceRow} 行 · 资料时点未知</span>
             <a href={href} className="inline-flex min-h-11 items-center font-semibold">查看线索与来源 →</a>
           </footer>
         </article></li>;
@@ -59,6 +91,8 @@ export function InstitutionReferenceDirectoryContent({ manifest, index, province
       {result.total > 0 && <nav aria-label="来源线索分页" className="flex flex-wrap items-center justify-center gap-3">{result.page > 1 && <a href={sitePath(referenceListHref({ ...result, page: result.page - 1 }))} className="btn-outline px-3 text-sm" rel="prev">上一页</a>}<span className="text-[13px] text-sub">第 {result.page} / {result.pageCount} 页 · 每页 20 条</span>{result.page < result.pageCount && <a href={sitePath(referenceListHref({ ...result, page: result.page + 1 }))} className="btn-outline px-3 text-sm" rel="next">下一页</a>}</nav>}
     </>}
     <details className="card p-4 text-[14px] text-body"><summary className="cursor-pointer font-semibold text-ink">查看来源定位，再核对官方资料</summary><p className="mb-0 mt-3">文件覆盖 {manifest.provinces.length} 个省级分组、{manifest.rowCount.toLocaleString('zh-CN')} 条来源行。重复名称及同一登记代码对应多处场所均保留为原始行，不计作独立在营机构数。原始 XLSX 未公开，所列工作表行号用于资料复核；打开详情可查看全部 11 个原列名和非联系字段原值，含联系方式的自由文本整格显示“[已遮蔽]”，私有原件保留不变。检索和地区分组仍使用整理后的字段。</p><p className="mb-0 mt-2">本站于 <time dateTime={manifest.receivedAt}>{manifest.receivedAt}</time> 接收此文件；接收日不是资料截至日。<a href={sitePath('/data/qcc-institutions/manifest.v1.json')} className="underlink ml-2">查看公开快照清单</a></p><a href={sitePath('/quanguo/laiyuan/')} className="mt-3 inline-block font-semibold">查看官方来源记录 →</a></details>
+    </div>
+    </div>
   </div>;
 }
 

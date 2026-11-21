@@ -132,6 +132,13 @@ test('directory and detail show provenance, candidate limits and base-path links
     assert.ok(list.includes('<option value="guangdong">广东省（独立快照）</option>'));
     assert.ok(!list.includes('href="/eldercare/guangdong/zhuti/"'));
     const content = renderToStaticMarkup(React.createElement(QccNationalDetailContent, { manifest, record: detail, from: nationalListHref(query) }));
+    const hero = content.slice(content.indexOf('<section id="overview"'), content.indexOf('<section id="fields"'));
+    assert.match(hero, /福康养老服务中心/);
+    assert.match(hero, /登记状态.*注销（2020-01-01）/);
+    assert.match(hero, /统一社会信用代码.*导出未提供/);
+    assert.match(hero, /主体类型.*个体工商户/);
+    assert.match(hero, /北京\.xlsx.*2026-11-05/);
+    assert.match(hero, /返回候选目录.*保留筛选/);
     assert.match(content, /北京\.xlsx/);
     assert.match(content, /原始文件第 7 行/);
     assert.ok(content.includes('a'.repeat(64)));
@@ -140,6 +147,10 @@ test('directory and detail show provenance, candidate limits and base-path links
     assert.match(content, /aria-label="本页目录"/);
     for (const id of ['overview', 'fields', 'industry', 'original', 'identifiers', 'official', 'sources', 'checklist']) {
       assert.ok(content.includes('id="' + id + '"'), id);
+    }
+    const order = ['overview', 'fields', 'industry', 'identifiers', 'official', 'sources', 'original', 'checklist'];
+    for (let at = 1; at < order.length; at++) {
+      assert.ok(content.indexOf('id="' + order[at - 1] + '"') < content.indexOf('id="' + order[at] + '"'), order[at]);
     }
     assert.match(content, /核对这条登记主体候选/);
     assert.ok(content.includes('href="/eldercare/quanguo/laiyuan/"'));

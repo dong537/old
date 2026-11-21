@@ -5,18 +5,18 @@ export default {
   theme: {
     extend: {
       colors: {
-        brand: { DEFAULT: '#145F60', dark: '#0E484B', tint: '#EAF4F1', line: '#C8DED9', ink: '#12474A' },
-        ink: '#1C3033', body: '#3B4B4E', sub: '#5A6B6E', page: '#F5F8F7', line: '#DCE6E3', hair: '#E9EFED',
+        brand: { DEFAULT: '#D84222', dark: '#AE2A19', tint: '#FFF0DD', line: '#EBC7A4', ink: '#8F321D' },
+        ink: '#302C29', body: '#574B43', sub: '#76685F', page: '#FCF8F1', line: '#E6D6C5', hair: '#F0E4D7',
         gradeA: { DEFAULT: '#1E6B45', bg: '#E7F5EC' },
         gradeB: { DEFAULT: '#2456A6', bg: '#EAF1FC' },
         gradeC: { DEFAULT: '#4A5059', bg: '#EEF0F2' },
         gradeD: { DEFAULT: '#7A4A00', bg: '#FFF2D9', soft: '#FFF8EA', line: '#E9C27A' },
         risk: { DEFAULT: '#A1260D', bg: '#FDECEA', line: '#F2C1B8' },
         official: { DEFAULT: '#5B3F99', bg: '#F1ECFA' },
-        caution: { DEFAULT: '#7A4A00', bg: '#FFF8EA', line: '#E9C27A' },
+        caution: { DEFAULT: '#88501A', bg: '#FFF8EB', line: '#E8C798' },
       },
       fontFamily: { sans: ['-apple-system', 'BlinkMacSystemFont', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', 'sans-serif'] },
-      maxWidth: { site: '1180px' },
+      maxWidth: { site: '1280px' },
     },
   },
   plugins: [],

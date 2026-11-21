@@ -40,15 +40,15 @@ export default function RulesPage() {
       </ul>
     </Sec>
 
-    <Sec id="scope" title="收录范围：广州档案、全国机构线索、官方来源与登记主体候选">
+    <Sec id="scope" title="收录范围：全国线索、官方来源、登记主体与广州专项">
       <ul className="m-0 flex flex-col gap-1.5 pl-5 text-body">
-        <li>广州档案收录同一份广州市民政局公开名单中的 {catalog.institutions.length} 条记录，一条记录对应一份广州档案；展示名称、行政区、地址、可公开电话、备案床位及三项预收费标记。</li>
-        <li>全国官方来源目录中的广东记录按 21 市各一份已取到的官方逐名来源展示名称线索。它们来自不同资料期，包含部分区县子集；列表数字是来源记录数，不是独立机构数或当前在营数。</li>
+        <li>全国机构线索来自用户提供的《养老机构信息.xlsx》，共有 {institutionReferenceManifest.rowCount.toLocaleString('zh-CN')} 条企查查来源机构线索，按原表行政区划代码与“地区”列分为 {institutionReferenceManifest.provinces.length} 个省级地区、{institutionReferenceManifest.provinces.reduce((count, province) => count + province.cities.length, 0)} 个地市展示组。它与登记主体候选和官方来源可能重叠，来源行不等于独立机构，资料截至日未知，也不能证明当前在营或空床。</li>
         <li>广东以外另收录 {officialManifest.rowCount.toLocaleString('zh-CN')} 条跨省官方来源记录，来自 {officialManifest.sources.length} 组经核验的官方来源、覆盖 {officialManifest.provinces.length} 个省级地区。各来源范围不同，可能包含敬老院、社区照料设施或医院；来源行不能当作全国或所在省市的当前全量机构数。</li>
+        <li>全国官方来源目录中的广东记录按 21 市各一份已取到的官方逐名来源展示名称线索。它们来自不同资料期，包含部分区县子集；列表数字是来源记录数，不是独立机构数或当前在营数。</li>
         <li>这些广东来源记录不自动与广州档案或工商主体合并，不提供电话、床位、价格、预约或当前营业状态。请逐条打开官方来源核对。</li>
-        <li>另有 6,777 条企查查导出的广东登记主体宽口径搜索结果，单独检索和计数；未逐条核实其养老关联，不等于 6,777 家养老机构。与官方来源同城同名的关联仅是候选线索。</li>
         <li>广东以外另有 {nationalManifest.sourceFiles.length} 份企查查导出快照，共 {nationalManifest.rowCount.toLocaleString('zh-CN')} 条原始行，覆盖 {nationalManifest.provinces.length} 个省级地区、{nationalManifest.provinces.reduce((count, province) => count + province.cities.length, 0)} 个省市分组。与广东独立快照分别查询；这些是登记主体候选记录，不是全国养老机构名录或当前在营数。</li>
-        <li>用户提供的《养老机构信息.xlsx》另有 {institutionReferenceManifest.rowCount.toLocaleString('zh-CN')} 条企查查来源机构线索，按原表行政区划代码与“地区”列分为 {institutionReferenceManifest.provinces.length} 个省级地区、{institutionReferenceManifest.provinces.reduce((count, province) => count + province.cities.length, 0)} 个地市展示组。它与登记主体候选和官方来源可能重叠，来源行不等于独立机构，资料截至日未知，也不能证明当前在营或空床。</li>
+        <li>另有 6,777 条企查查导出的广东登记主体宽口径搜索结果，单独检索和计数；未逐条核实其养老关联，不等于 6,777 家养老机构。与官方来源同城同名的关联仅是候选线索。</li>
+        <li>广州档案收录同一份广州市民政局公开名单中的 {catalog.institutions.length} 条记录，一条记录对应一份广州档案；展示名称、行政区、地址、可公开电话、备案床位及三项预收费标记。</li>
         <li>养老服务记录页列出医保官方年度考核和新增定点评估合格公示，不是当前全量定点名单。</li>
         <li>任何城市的来源行都不能视作该市完整、当前在营的养老机构数量。</li>
       </ul>
@@ -133,7 +133,7 @@ export default function RulesPage() {
       <p className="m-0 text-body">全国机构线索先选省市，再按原表名称、地址或地区检索；列表保留 XLSX 来源行序，完全重复的来源行也不合并，不按床位或服务质量排名。</p>
       <p className="m-0 text-body">跨省主体候选先选省市，再按名称、主体类型和登记状态筛选；列表保留导出来源行顺序，同名不同来源行分别显示，不按服务质量排序。</p>
       <p className="m-0 text-body">当前没有质量排名、价格排序或付费置顶。对比页仅并列展示同一份名单的可核字段，最多选择 3 家。</p>
-      <Link href="/guangzhou/jigou/">查找养老机构 →</Link>
+      <Link href="/quanguo/cankao/">查找养老机构 →</Link>
     </Sec>
 
     <Sec id="rankings" title="榜单（暂未开放）">
@@ -176,7 +176,7 @@ export default function RulesPage() {
         ].map(([item, state]) => <tr key={item}><td className="font-semibold">{item}</td><td className="text-body">{state}</td></tr>)}</tbody>
       </table></div>
       <p className="m-0 text-[13px] text-sub">公开 JSON 保留来源与快照标识。引用时请同时保留原始来源和发布日期，不把本地副本称为实时官方数据。</p>
-      <div className="flex flex-wrap gap-3"><a href={sitePath("/data/guangzhou-institutions.v1.json")} className="btn-outline btn-sm">查看公开数据 JSON</a><Link href="/guangzhou/jigou/" className="btn-primary btn-sm">返回查找养老机构</Link></div>
+      <div className="flex flex-wrap gap-3"><a href={sitePath("/data/guangzhou-institutions.v1.json")} className="btn-outline btn-sm">查看广州名单 JSON</a><Link href="/quanguo/cankao/" className="btn-primary btn-sm">返回查找养老机构</Link></div>
     </Sec>
   </>;
 }

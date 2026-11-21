@@ -119,7 +119,7 @@ test('reference area selection keeps a keyword entered before choosing a provinc
   const html = renderToStaticMarkup(React.createElement(InstitutionReferenceDirectoryContent, {
     manifest, index: null, query: { q: '养老' },
   }));
-  const selectionForm = html.match(/<form\b[^>]*>[\s\S]*?<\/form>/)?.[0];
+  const selectionForm = html.match(/<form\b[^>]*aria-label="选择线索省份和可选城市"[^>]*>[\s\S]*?<\/form>/)?.[0];
   assert.ok(selectionForm);
   assert.ok(selectionForm.includes('action="' + sitePath('/quanguo/cankao/') + '"'));
   assert.match(selectionForm, /<input type="hidden" name="q" value="养老"\/>/);
@@ -200,14 +200,26 @@ test('reference directory and detail state the source limits and missing fields'
   assert.match(missingAddressList, /原表空白、含联系方式或以机构名称占位/);
   const detail = renderToStaticMarkup(React.createElement(InstitutionReferenceDetailContent, { manifest, record: chunk.records[1], officialCandidates: [], provinceName: '河北省', cityName: '石家庄市', from: referenceListHref({ province: 'hebei', city: 'shijiazhuang', q: '乙' }) }));
   assert.match(detail, /aria-label="本页目录"/);
-  for (const section of ['overview', 'fields', 'original', 'official', 'registry', 'sources', 'checklist']) {
+  for (const section of ['overview', 'fields', 'services', 'care', 'reviews', 'original', 'official', 'registry', 'sources', 'checklist']) {
     assert.ok(detail.includes('id="' + section + '"'), section + ' must have a matching section');
     assert.ok(detail.includes('href="#' + section + '"'), section + ' must be reachable from the archive TOC');
   }
+  const readingOrder = ['overview', 'fields', 'services', 'care', 'reviews', 'official', 'registry', 'sources', 'original', 'checklist'];
+  for (let at = 1; at < readingOrder.length; at++) {
+    assert.ok(detail.indexOf('<section id="' + readingOrder[at - 1] + '"') < detail.indexOf('<section id="' + readingOrder[at] + '"'),
+      readingOrder[at] + ' should follow ' + readingOrder[at - 1]);
+  }
+  assert.ok(detail.indexOf('<section id="overview"') < detail.indexOf('<section aria-label="床位与费用摘要"'));
+  assert.ok(detail.indexOf('<section aria-label="床位与费用摘要"') < detail.indexOf('<section id="fields"'));
+  assert.ok(detail.indexOf('<section id="reviews"') < detail.indexOf('核对这条机构线索'));
+  assert.match(detail, /来源表记录 · 资料时点未知/);
+  assert.doesNotMatch(detail, /机构已认证|提交资料|阅读本站文章/);
   assert.match(detail, /核对这条机构线索/);
   assert.doesNotMatch(detail, /在线预约暂未开放|预约探访/);
   assert.match(detail, /工作表第 3 行/);
-  assert.match(detail, /原表地址字段（未核实）.*暂无可公开地址/);
+  assert.match(detail, /原表地址字段（未核实）.*本来源未提供/);
+  assert.match(detail, /月总费用.*本来源未提供/);
+  assert.match(detail, /本来源未提供用户评价数据/);
   assert.match(detail, /原表地址字段未经核实，不能用于导航/);
   assert.match(detail, /摘要地址可能因原表空白、含联系方式或以机构名称占位而不展示/);
   assert.match(detail, /统一社会信用代码.*原表代码未通过校验/);

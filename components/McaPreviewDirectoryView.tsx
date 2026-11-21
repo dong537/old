@@ -90,16 +90,16 @@ export function McaPreviewDirectoryContent({ records, snapshotId, capturedAt, wi
       <button type="submit" className="btn-primary shrink-0">检索</button>
     </form>
     {result.issues.length > 0 && <div className="notice" role="status">{result.issues.join(' ')} <a href={sitePath('/quanguo/mca-preview/')} className="underlink">清除条件</a></div>}
-    <div className="grid gap-5 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start">
-      <aside className="hidden lg:block" aria-label="观察字段筛选"><div className="filter-panel sticky top-4">
+    <div className="directory-workspace">
+      <aside className="directory-sidebar hidden lg:block" aria-label="观察字段筛选"><div className="filter-panel">
         <h2 className="mb-4 mt-0 text-base font-semibold">筛选观察记录</h2>
         <Filters key={'desktop:' + params.toString()} records={records} result={result} idPrefix="mca-desktop" />
       </div></aside>
-      <div className="min-w-0 space-y-4">
-        <details className="filter-panel lg:hidden"><summary className="cursor-pointer font-semibold">按地区和设施类型筛选</summary>
+      <div className="directory-results">
+        <details className="filter-panel lg:hidden" open={!result.selected.province}><summary className="cursor-pointer font-semibold">按地区和设施类型筛选</summary>
           <div className="mt-4"><Filters key={'mobile:' + params.toString()} records={records} result={result} idPrefix="mca-mobile" /></div>
         </details>
-        <div className="flex flex-wrap items-baseline justify-between gap-2"><h2 className="m-0 text-lg font-semibold">观察记录</h2>
+        <div className="results-heading"><h2 className="m-0 text-lg font-semibold">观察记录</h2>
           <p className="m-0 text-sm text-sub" role="status" aria-live="polite">匹配 {result.total.toLocaleString('zh-CN')} 个平台 ID · 第 {result.page}/{result.pageCount} 页</p></div>
         {result.total === 0 ? <div className="card p-8"><h3 className="m-0 text-lg font-semibold">当前条件没有观察记录</h3>
           <p className="mt-2 text-body">可缩短关键词或调整地区；没有观察记录不代表当地不存在机构。</p>
@@ -113,15 +113,13 @@ export function McaPreviewDirectoryContent({ records, snapshotId, capturedAt, wi
                   <span className="tag">{record.displayType}</span></div>
                   <p className="m-0 text-sm text-body">{record.displayRegion}</p>
                   <p className="m-0 break-words text-sm text-body">详细地址：{record.displayAddress}</p>
-                  {(record.starText || record.evaluationText) && <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-sub">
-                    {record.starText && <span>机构星级原码：{record.starText}</span>}
-                    {record.evaluationText && <span>{record.evaluationText}</span>}
-                  </div>}
-                  <div className="grid gap-2 text-sm text-body sm:grid-cols-2">
+                   <div className="grid gap-x-6 gap-y-2 border-t border-hair pt-3 text-sm text-body sm:grid-cols-2">
                     <p className="m-0">机构床位：{record.bedsText}（平台列示）</p>
                     <p className="m-0">护理型床位：{record.nursingBedsText}（平台列示）</p>
+                     <p className="m-0">月费用范围：{record.feeText ?? '原平台未提供'}{record.feeWarning && <span className="text-caution">；0 不代表免费</span>}</p>
+                     <p className="m-0">机构星级原码：{record.starText ?? '原平台未提供'}</p>
                   </div>
-                  {record.feeText && <p className="m-0 text-sm text-body">月费用范围：{record.feeText}{record.feeWarning && <span className="text-caution">；0 不代表免费</span>}</p>}
+                   {record.evaluationText && <p className="m-0 text-xs text-sub">{record.evaluationText}</p>}
                   <div className="flex flex-wrap gap-2 text-xs"><span className="tag">{record.hasDetail ? '已存双端点详情' : '尚无双端点详情'}</span>
                     {record.conflictFields.length > 0 && <span className="rounded border border-caution-line bg-caution-bg px-2 py-0.5 text-caution">{record.conflictFields.length} 项字段冲突待核</span>}</div>
                 </div>

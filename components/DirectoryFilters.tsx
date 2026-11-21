@@ -48,12 +48,13 @@ export function DirectoryFilters({ q, district, districts, counts, feeFilters, f
     })}
   </>;
   return <section className="filter-panel" aria-label="筛选养老机构">
-    <form action={sitePath('/guangzhou/jigou/')} method="get" role="search" aria-label="检索广州养老机构" className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+    <h2 className="mb-4 mt-0 border-b border-line pb-3 text-base font-semibold">查询与筛选</h2>
+    <form action={sitePath('/guangzhou/jigou/')} method="get" role="search" aria-label="检索广州养老机构" className="grid gap-3">
       {district && <input type="hidden" name="district" value={district} />}
       {feeFilterKeys.filter(key => feeFilters[key]).map(key => <input key={key} type="hidden" name={key} value={feeFilters[key]} />)}
       {compare && <input type="hidden" name="compare" value={compare} />}
       <div className="min-w-0"><label htmlFor="directory-q" className="mb-1.5 block text-sm font-semibold">机构名称或地址</label><input id="directory-q" name="q" type="search" maxLength={80} defaultValue={q} placeholder="输入名称、街道或地址" className="field min-h-12" /></div>
-      <button type="submit" className="btn-primary min-h-12 px-6">查找机构</button>
+      <button type="submit" className="btn-primary min-h-12 w-full px-6">查找机构</button>
     </form>
     <details className="mt-4 border-t border-hair pt-3 sm:hidden" open={Boolean(district)}>
       <summary className="cursor-pointer text-[14px] font-semibold text-brand">按区筛选{district ? `：${district}` : ''}</summary>

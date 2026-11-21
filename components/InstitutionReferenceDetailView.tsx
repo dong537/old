@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { SectionTitle } from '@/components/DirectoryUi';
-import { ProfileToc, type ProfileTocItem } from '@/components/ProfileToc';
+import { PublicInstitutionBottomNav, PublicInstitutionDetailSections, PublicInstitutionHero, PublicInstitutionSummary } from '@/components/PublicInstitutionDetailSections';
+import { mapReferenceInstitutionDetail } from '@/lib/institution-detail-dto';
 import { loadReferenceCityLinks, loadReferenceLinksManifest, officialCandidateHref } from '@/lib/institution-reference-links';
 import { institutionRegistryCandidateHref, loadInstitutionRegistryCityLinks, loadInstitutionRegistryLinksManifest } from '@/lib/institution-registry-links';
 import {
@@ -36,32 +37,48 @@ function codeLabel(record: ReferenceDetailRecord): string {
 
 export function InstitutionReferenceDetailContent({ manifest, record, officialCandidates, officialError, onOfficialRetry, registryCandidates, registryError, onRegistryRetry, provinceName, cityName, from }: { manifest: ReferenceManifest; record: ReferenceDetailRecord; officialCandidates?: ReferenceOfficialMatch[]; officialError?: string; onOfficialRetry?: () => void; registryCandidates?: InstitutionRegistryTarget[]; registryError?: string; onRegistryRetry?: () => void; provinceName: string; cityName: string; from: string | null }) {
   const listHref = safeReferenceReturnPath(from);
-  const toc: ProfileTocItem[] = [
+  const dto = mapReferenceInstitutionDetail(record);
+  const toc = [
     { id: 'overview', label: '概况' },
-    { id: 'fields', label: '机构资料' },
-    { id: 'original', label: '原始字段' },
+    { id: 'fields', label: '基本信息' },
+    { id: 'services', label: '服务信息' },
+    { id: 'care', label: '机构养老' },
+    { id: 'reviews', label: '用户评价' },
     { id: 'official', label: '官方来源候选' },
     { id: 'registry', label: '主体候选' },
     { id: 'sources', label: '来源' },
+    { id: 'original', label: '原始字段' },
     { id: 'checklist', label: '核对建议' },
   ];
-  const verification = <div className="card flex flex-col gap-3 p-5 text-[14px]">
-    <h2 className="m-0 text-lg font-semibold">核对这条机构线索</h2>
-    <p className="m-0 text-body">本表没有已核实的机构联系电话、实时空床或预约入口。先看官方同名来源和登记主体候选，再向服务场所确认当前情况。</p>
-    <a href={sitePath('#official')} className="text-[13px]">查看官方来源候选 →</a>
-    <a href={sitePath('#registry')} className="text-[13px]">查看登记主体候选 →</a>
-    <a href={sitePath('#sources')} className="text-[13px]">核对原始来源 →</a>
+  const verification = <div className="rounded-lg border border-brand-line bg-brand-tint p-5 text-[14px]">
+    <h2 className="m-0 text-base font-semibold">核对这条机构线索</h2>
+    <p className="mb-0 mt-3 text-body">本表没有已核实的机构联系电话、实时空床或预约入口。先看官方同名来源和登记主体候选，再向服务场所确认当前情况。</p>
+    <div className="mt-4 flex flex-col gap-2 border-t border-brand-line pt-3 font-semibold">
+      <a href={sitePath('#official')}>查看官方来源候选 →</a>
+      <a href={sitePath('#registry')}>查看登记主体候选 →</a>
+      <a href={sitePath('#sources')}>核对原始来源 →</a>
+    </div>
   </div>;
-  return <>
-    <nav id="top" tabIndex={-1} aria-label="面包屑" className="text-[13px] text-sub"><a href={sitePath('/quanguo/cankao/')}>全国养老机构来源线索</a><span className="mx-2" aria-hidden="true">/</span>{provinceName} · {cityName}<span className="mx-2" aria-hidden="true">/</span>工作表第 {record.sourceRow} 行</nav>
-    <ProfileToc items={toc} variant="bar" />
-    <div className="flex items-start gap-6">
-      <ProfileToc items={toc} variant="side" />
-      <div className="flex min-w-0 flex-1 flex-col gap-5">
-    <section id="overview" tabIndex={-1} className="section flex flex-col gap-3"><div className="flex flex-col gap-2"><span className="tag w-fit">企查查来源线索 · 资料时点未知</span><h1 className="m-0 break-words text-[28px] font-bold leading-tight sm:text-[32px]">{record.name}</h1><p className="m-0 text-body">{record.region} · 原表床位数 {record.beds.toLocaleString('zh-CN')} 张（不等于当前空床）</p><p className="m-0 text-body">这是来源表中的一条线索，不是官方备案或营业状态证明。也未核实此场所与其他登记主体的关系。</p></div>
-    <div className="flex flex-wrap items-center justify-between gap-2 text-[13px] text-sub"><span>工作表第 {record.sourceRow} 行 · 档案编号 {record.id}</span><a href={sitePath(listHref)} className="underlink text-sm">← 返回线索目录{listHref !== '/quanguo/cankao/' ? '（保留筛选）' : ''}</a></div></section>
-    <div className="lg:hidden">{verification}</div>
-    <section id="fields" tabIndex={-1} className="section"><SectionTitle title="原表信息" extra="仅供核对，不代表当前服务承诺" /><dl className="m-0 grid gap-4 text-[14px] sm:grid-cols-2"><div className="sm:col-span-2"><dt className="text-sub">原表地区</dt><dd className="m-0 break-words">{record.region}</dd></div><div className="sm:col-span-2"><dt className="text-sub">原表地址字段（未核实）</dt><dd className="m-0 break-words">{record.address ?? '暂无可公开地址'}</dd></div><div><dt className="text-sub">原表床位数</dt><dd className="m-0">{record.beds.toLocaleString('zh-CN')} 张（资料时点未知，不等于当前空床）</dd></div><div><dt className="text-sub">统一社会信用代码</dt><dd className="m-0 break-all font-mono">{codeLabel(record)}</dd></div></dl></section>
+  return <div className="institution-detail-page">
+    <nav id="top" tabIndex={-1} aria-label="面包屑" className="flex flex-wrap items-center gap-x-2 bg-[#F28C16] px-5 py-3 text-[13px] text-white sm:px-8 lg:px-20"><a href={sitePath('/quanguo/cankao/')} className="text-white underline-offset-4 hover:text-white hover:underline">全国养老机构来源线索</a><span aria-hidden="true">›</span><span>{provinceName} · {cityName}</span><span aria-hidden="true">›</span><span>工作表第 {record.sourceRow} 行</span></nav>
+    <div className="flex min-w-0 flex-col gap-5">
+    <PublicInstitutionHero dto={dto} sourceLabel="来源表记录 · 资料时点未知" sourceTitle={manifest.source.title + ' · 工作表第 ' + record.sourceRow + ' 行'} sourceDate={null} returnHref={listHref} returnLabel={'返回线索目录' + (listHref !== '/quanguo/cankao/' ? '（保留筛选）' : '')}>
+      <p className="mb-0 mt-3 max-w-[850px] text-[13px] leading-6 text-body">这是来源表中的一条线索，不是官方备案或营业状态证明；此场所与登记主体的关系也未核实。</p>
+    </PublicInstitutionHero>
+    <PublicInstitutionSummary dto={dto} />
+    <PublicInstitutionDetailSections dto={dto} extraBasic={<dl className="m-0 border-t border-hair pt-3 text-[14px]"><div className="grid gap-1 sm:grid-cols-[145px_minmax(0,1fr)] sm:gap-5"><dt className="text-sub">统一社会信用代码</dt><dd className="m-0 break-all font-mono">{codeLabel(record)}</dd></div></dl>} />
+    <div>{verification}</div>
+    <section id="official" tabIndex={-1} className="section">
+      <SectionTitle title="同省同名官方来源候选" extra="名称匹配，身份未核实" />
+      <p className="mt-0 text-[14px] text-body">这些关联仅按同一省份与机构名称相同建立，尚未确认是否为同一场所、运营主体或当前在营机构。请打开官方来源逐条核对。</p>
+      {officialError ? <div className="notice text-[14px]" role="alert">官方来源候选暂时不可用：{officialError} <button type="button" className="underlink" onClick={onOfficialRetry}>重试候选关联</button></div> : officialCandidates === undefined ? <p className="m-0 text-[14px] text-sub" role="status">正在读取官方来源候选…</p> : officialCandidates.length > 0 ? <ul className="m-0 list-none space-y-3 p-0" aria-label="同省同名官方来源候选">{officialCandidates.map(match => <li key={match.kind + ':' + match.id + ':' + match.provinceSlug + ':' + match.citySlug} className="card p-4"><span className="tag">候选匹配 · 身份未核实</span><p className="mb-1 mt-2 break-words text-[14px]">官方来源 · {match.city} · {match.sourceTitle}</p><a href={officialCandidateHref(match)} className="text-[13px]">查看官方来源记录 →</a></li>)}</ul> : <p className="m-0 text-[14px] text-sub">本站已收录的官方来源中未发现同省同名记录；不证明机构不存在。</p>}
+    </section>
+    <section id="registry" tabIndex={-1} className="section">
+      <SectionTitle title="同省信用代码相同的登记主体候选" extra="代码匹配，场所及运营关系未核实" />
+      <p className="mt-0 text-[14px] text-body">仅当双方公开投影中的统一社会信用代码有效、相同且同省，并且该代码只命中一条登记主体记录时列出。代码相同不证明该主体经营本场所，也不证明当前在营；多条线索也可能指向同一登记主体，不能据此计算独立养老机构数。</p>
+      {record.codeStatus !== 'valid' ? <p className="m-0 text-[14px] text-sub">该线索没有可用于精确匹配的有效公开信用代码。</p> : registryError ? <div className="notice text-[14px]" role="alert">登记主体候选暂时不可用：{registryError} <button type="button" className="underlink" onClick={onRegistryRetry}>重试候选关联</button></div> : registryCandidates === undefined ? <p className="m-0 text-[14px] text-sub" role="status">正在读取登记主体候选…</p> : registryCandidates.length > 0 ? <ul className="m-0 list-none space-y-3 p-0" aria-label="信用代码相同的登记主体候选">{registryCandidates.map(target => <li key={target.kind + ':' + target.id} className="card p-4"><span className="tag">信用代码相同 · 关系未核实</span><p className="mb-1 mt-2 break-words text-[14px] font-semibold">{target.name}</p><p className="mb-2 mt-0 text-[13px] text-sub">{target.province} · {target.city} · {target.name === record.name ? '名称相同，关系仍未核实' : '名称不同，仅说明代码相同'}</p><a href={institutionRegistryCandidateHref(target)} className="text-[13px]">查看登记主体记录 →</a></li>)}</ul> : <p className="m-0 text-[14px] text-sub">本次公开快照未找到符合上述条件的同省唯一登记主体候选；不证明该机构没有登记主体。</p>}
+    </section>
+    <section id="sources" tabIndex={-1} className="section"><SectionTitle title="来源与核对" /><dl className="m-0 grid gap-4 text-[14px] sm:grid-cols-2"><div><dt className="text-sub">来源文件</dt><dd className="m-0">{manifest.source.title}</dd></div><div><dt className="text-sub">资料截至</dt><dd className="m-0">资料时点未知</dd></div><div><dt className="text-sub">来源定位</dt><dd className="m-0">工作表第 {record.sourceRow} 行 · 快照记录 {record.id}</dd></div><div><dt className="text-sub">本站接收日期</dt><dd className="m-0"><time dateTime={manifest.receivedAt}>{manifest.receivedAt}</time></dd></div></dl><p className="mb-0 mt-4 break-all text-[13px] text-sub">来源文件 SHA-256：<span className="font-mono">{manifest.source.sha256}</span></p><p className="mb-0 mt-3 text-[13px]"><a href={sitePath('/quanguo/laiyuan/')}>查看已取得的官方逐名来源记录 →</a></p></section>
     <section id="original" tabIndex={-1} className="section">
       <SectionTitle title="原始来源字段（完整 11 列）" extra="保留原表列，联系方式已遮蔽" />
       <p className="mt-0 text-[14px] text-body">以下保留原表 11 列，包含无效或占位代码；含联系方式的地址及其他自由文本已遮蔽。补充省市区县为原始来源值，未用于地区归属；坐标为原始来源值，未用于地区归属，也未核实定位准确性。资料时点未知，原表床位数不等于当前空床。</p>
@@ -74,22 +91,10 @@ export function InstitutionReferenceDetailContent({ manifest, record, officialCa
         </div>;
       })}</dl>
     </section>
-    <section id="official" tabIndex={-1} className="section">
-      <SectionTitle title="同省同名官方来源候选" extra="名称匹配，身份未核实" />
-      <p className="mt-0 text-[14px] text-body">这些关联仅按同一省份与机构名称相同建立，尚未确认是否为同一场所、运营主体或当前在营机构。请打开官方来源逐条核对。</p>
-      {officialError ? <div className="notice text-[14px]" role="alert">官方来源候选暂时不可用：{officialError} <button type="button" className="underlink" onClick={onOfficialRetry}>重试候选关联</button></div> : officialCandidates === undefined ? <p className="m-0 text-[14px] text-sub" role="status">正在读取官方来源候选…</p> : officialCandidates.length > 0 ? <ul className="m-0 list-none space-y-3 p-0" aria-label="同省同名官方来源候选">{officialCandidates.map(match => <li key={match.kind + ':' + match.id + ':' + match.provinceSlug + ':' + match.citySlug} className="card p-4"><span className="tag">候选匹配 · 身份未核实</span><p className="mb-1 mt-2 break-words text-[14px]">官方来源 · {match.city} · {match.sourceTitle}</p><a href={officialCandidateHref(match)} className="text-[13px]">查看官方来源记录 →</a></li>)}</ul> : <p className="m-0 text-[14px] text-sub">本站已收录的官方来源中未发现同省同名记录；不证明机构不存在。</p>}
-    </section>
-    <section id="registry" tabIndex={-1} className="section">
-      <SectionTitle title="同省信用代码相同的登记主体候选" extra="代码匹配，场所及运营关系未核实" />
-      <p className="mt-0 text-[14px] text-body">仅当双方公开投影中的统一社会信用代码有效、相同且同省，并且该代码只命中一条登记主体记录时列出。代码相同不证明该主体经营本场所，也不证明当前在营；多条线索也可能指向同一登记主体，不能据此计算独立养老机构数。</p>
-      {record.codeStatus !== 'valid' ? <p className="m-0 text-[14px] text-sub">该线索没有可用于精确匹配的有效公开信用代码。</p> : registryError ? <div className="notice text-[14px]" role="alert">登记主体候选暂时不可用：{registryError} <button type="button" className="underlink" onClick={onRegistryRetry}>重试候选关联</button></div> : registryCandidates === undefined ? <p className="m-0 text-[14px] text-sub" role="status">正在读取登记主体候选…</p> : registryCandidates.length > 0 ? <ul className="m-0 list-none space-y-3 p-0" aria-label="信用代码相同的登记主体候选">{registryCandidates.map(target => <li key={target.kind + ':' + target.id} className="card p-4"><span className="tag">信用代码相同 · 关系未核实</span><p className="mb-1 mt-2 break-words text-[14px] font-semibold">{target.name}</p><p className="mb-2 mt-0 text-[13px] text-sub">{target.province} · {target.city} · {target.name === record.name ? '名称相同，关系仍未核实' : '名称不同，仅说明代码相同'}</p><a href={institutionRegistryCandidateHref(target)} className="text-[13px]">查看登记主体记录 →</a></li>)}</ul> : <p className="m-0 text-[14px] text-sub">本次公开快照未找到符合上述条件的同省唯一登记主体候选；不证明该机构没有登记主体。</p>}
-    </section>
-    <section id="sources" tabIndex={-1} className="section"><SectionTitle title="来源与核对" /><dl className="m-0 grid gap-4 text-[14px] sm:grid-cols-2"><div><dt className="text-sub">来源文件</dt><dd className="m-0">{manifest.source.title}</dd></div><div><dt className="text-sub">资料截至</dt><dd className="m-0">资料时点未知</dd></div><div><dt className="text-sub">来源定位</dt><dd className="m-0">工作表第 {record.sourceRow} 行 · 快照记录 {record.id}</dd></div><div><dt className="text-sub">本站接收日期</dt><dd className="m-0"><time dateTime={manifest.receivedAt}>{manifest.receivedAt}</time></dd></div></dl><p className="mb-0 mt-4 break-all text-[13px] text-sub">来源文件 SHA-256：<span className="font-mono">{manifest.source.sha256}</span></p><p className="mb-0 mt-3 text-[13px]"><a href={sitePath('/quanguo/laiyuan/')}>查看已取得的官方逐名来源记录 →</a></p></section>
     <section id="checklist" tabIndex={-1} className="section"><SectionTitle title="联系与探访前，建议核对" /><ul className="m-0 list-disc space-y-2 pl-5 text-body"><li>当前是否在营、能否提供所需照护服务，以及是否有合适床位。</li><li>实际服务场所、登记及签约主体是否一致，费用与退费如何书面约定。</li></ul><p className="mb-0 mt-3 text-[13px] text-sub">原表“省份、城市、区县、经纬度”存在互相冲突的行，本站仅按行政区划代码和“地区”列交叉核对后分组；补充地区和坐标原值在上方单独展示，未用于地区归属。来源行不能相加为独立机构数量。原表地址字段未经核实，不能用于导航。摘要地址可能因原表空白、含联系方式或以机构名称占位而不展示；原始来源字段保留 11 列，含联系方式的地址已遮蔽。</p></section>
-      </div>
-      <aside className="sticky top-4 hidden w-[320px] shrink-0 flex-col gap-4 lg:flex">{verification}</aside>
+      <PublicInstitutionBottomNav name={record.name} items={toc} />
     </div>
-  </>;
+  </div>;
 }
 
 export function InstitutionReferenceDetailView() {

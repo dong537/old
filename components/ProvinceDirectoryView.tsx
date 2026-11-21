@@ -33,12 +33,12 @@ export function ProvinceDirectoryView({ records, cities }: { records: ProvinceSo
   const returnTo = pageHref(result.page);
 
   return <div className="flex flex-col gap-5">
-    <ProvinceCoverageNote city={result.city} />
     <form key={result.q + '|' + result.city} action={sitePath('/guangdong/jigou/')} method="get" role="search" aria-label="检索广东养老相关官方来源记录" className="card grid gap-3 p-4 sm:grid-cols-[minmax(0,1fr)_minmax(160px,220px)_auto] sm:items-end">
       <div className="flex min-w-0 flex-col gap-1"><label htmlFor="province-q" className="text-[13px] font-semibold">名称关键词</label><input id="province-q" name="q" type="search" defaultValue={result.q} maxLength={80} placeholder="输入来源记录中的名称" className="min-h-11 w-full rounded-lg border border-line px-3 text-[15px] focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20" /></div>
       <div className="flex min-w-0 flex-col gap-1"><label htmlFor="province-city" className="text-[13px] font-semibold">城市</label><select id="province-city" name="city" defaultValue={result.city} className="min-h-11 w-full rounded-lg border border-line bg-white px-3 text-[15px] focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"><option value="">全部城市</option>{cities.map(city => <option key={city} value={city}>{city}</option>)}</select></div>
       <button type="submit" className="btn-primary min-h-11 px-5">检索记录</button>
     </form>
+    <ProvinceCoverageNote city={result.city} />
     {(result.q || result.city) && <p className="m-0 text-[13px] text-sub">当前条件：{result.city || '全部城市'}{result.q ? ' · ' + result.q : ''} · <a href={sitePath('/guangdong/jigou/')} className="underlink">清空条件</a></p>}
     {result.issues.length > 0 && <div className="notice" role="status">{result.issues.join(' ')} <a href={sitePath('/guangdong/jigou/')} className="underlink">查看全部来源记录</a></div>}
     <div className="flex flex-wrap items-baseline justify-between gap-2"><p className="m-0 text-[15px]" role="status" aria-live="polite">共 <b>{result.total}</b> 条来源记录</p><span className="text-[13px] text-sub">按冻结来源顺序展示 · 同城同名不自动合并</span></div>

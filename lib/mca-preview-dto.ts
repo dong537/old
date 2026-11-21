@@ -1,6 +1,6 @@
 import { mcaPreviewFields } from './mca-preview-types';
 import type { McaPreviewDetail, McaPreviewDetailObservation, McaPreviewField,
-  McaPreviewIndexRecord, McaPreviewObservation } from './mca-preview-types';
+  McaPreviewIndexRecord, McaPreviewObservation, McaJsonValue } from './mca-preview-types';
 
 export type McaPreviewFactState = 'observed' | 'missing' | 'conflict';
 
@@ -35,6 +35,56 @@ export interface McaPreviewDetailDto {
   conflictLabels: string[];
   listObservations: McaPreviewObservation[];
   detailObservations: McaPreviewDetailObservation[];
+  platformDetail: McaPreviewPlatformDetailDto;
+}
+
+export interface McaPreviewResolved<T> {
+  state: McaPreviewFactState;
+  value: T | null;
+  observationCount: number;
+}
+
+export interface McaPreviewChargeItem {
+  id: string | null;
+  name: string | null;
+  description: string | null;
+  standard: string | null;
+}
+
+export interface McaPreviewPlatformDetailDto {
+  identity: {
+    facilityType: McaPreviewResolved<string>;
+    starCode: McaPreviewResolved<string>;
+    functionPositioning: McaPreviewResolved<string>;
+    region: McaPreviewResolved<string>;
+    address: McaPreviewResolved<string>;
+  };
+  tags: McaPreviewResolved<string[]>;
+  subsidyCode: McaPreviewResolved<string>;
+  contactName: McaPreviewResolved<string>;
+  contactPhone: McaPreviewResolved<string>;
+  pointRaw: McaPreviewResolved<string>;
+  photoCount: McaPreviewResolved<number>;
+  areaSqm: McaPreviewResolved<number>;
+  introduction: McaPreviewResolved<string>;
+  service: {
+    content: McaPreviewResolved<string>;
+    team: McaPreviewResolved<string>;
+    hours: McaPreviewResolved<string>;
+    scope: McaPreviewResolved<string>;
+    explanation: McaPreviewResolved<string>;
+  };
+  beds: {
+    total: McaPreviewResolved<number>;
+    dayCare: McaPreviewResolved<number>;
+    fullCare: McaPreviewResolved<number>;
+    nursing: McaPreviewResolved<number>;
+  };
+  feeSummary: { code: '04' | '02' | '01' | '03'; label: string;
+    range: McaPreviewResolved<[number, number]>; description: McaPreviewResolved<string> }[];
+  charges: McaPreviewResolved<McaPreviewChargeItem[]>;
+  evaluation: { state: McaPreviewFactState; text: string;
+    count: McaPreviewResolved<number>; score: McaPreviewResolved<number> };
 }
 
 const labels: Record<McaPreviewField, string> = {
@@ -81,6 +131,198 @@ function evaluation(record: McaPreviewIndexRecord): string | null {
   const count = '平台评价 ' + numberText(record.evaluationCount) + ' 次';
   return record.overallEvaluation === null ? count :
     count + ' · 综合评价原值 ' + numberText(record.overallEvaluation) + '（量表未核）';
+}
+
+function object(value: McaJsonValue | undefined): Record<string, McaJsonValue> | null {
+  return value !== null && typeof value === 'object' && !Array.isArray(value) ? value : null;
+}
+
+function textValue(value: McaJsonValue | undefined): string | null {
+  return typeof value === 'string' && value.trim() ? value : null;
+}
+
+function numericValue(value: McaJsonValue | undefined): number | null {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null;
+}
+
+function resolved<T>(observations: readonly McaPreviewDetailObservation[], channel: 'orgBaseDetail' | 'yangLaoOrgDetail',
+  read: (fields: Record<string, McaJsonValue>) => readonly T[]): McaPreviewResolved<T> {
+  const values = observations.flatMap(observation => [...read(observation.endpoints[channel].sourceFields)]);
+  const distinct = new Map(values.map(value => [JSON.stringify(value), value]));
+  if (!values.length) return { state: 'missing', value: null, observationCount: 0 };
+  if (distinct.size > 1) return { state: 'conflict', value: null, observationCount: values.length };
+  return { state: 'observed', value: values[0], observationCount: values.length };
+}
+
+function baseString(observations: readonly McaPreviewDetailObservation[], key: string): McaPreviewResolved<string> {
+  return resolved(observations, 'orgBaseDetail', fields => {
+    const value = textValue(fields[key]);
+    return value === null ? [] : [value];
+  });
+}
+
+// 官网页面用 hae5List[].ahae2372 换取图片地址；此处仅统计文件记录，不请求或存储图片 URL。
+function photoCount(observations: readonly McaPreviewDetailObservation[]): McaPreviewResolved<number> {
+  const malformed = observations.some(observation => {
+    const raw = observation.endpoints.orgBaseDetail.sourceFields.hae5List;
+    return raw !== null && raw !== undefined && (!Array.isArray(raw) || raw.some(row => textValue(object(row)?.ahae2372) === null));
+  });
+  if (malformed) return { state: 'conflict', value: null, observationCount: observations.length };
+  const ids = resolved(observations, 'orgBaseDetail', fields => {
+    const raw = fields.hae5List;
+    return Array.isArray(raw) ? [raw.map(row => textValue(object(row)?.ahae2372) as string)] : [];
+  });
+  return { ...ids, value: ids.value === null ? null : ids.value.length };
+}
+
+function nestedString(observations: readonly McaPreviewDetailObservation[], parent: string, key: string): McaPreviewResolved<string> {
+  return resolved(observations, 'orgBaseDetail', fields => {
+    const value = textValue(object(fields[parent])?.[key]);
+    return value === null ? [] : [value];
+  });
+}
+
+function careNumber(observations: readonly McaPreviewDetailObservation[], key: string): McaPreviewResolved<number> {
+  return resolved(observations, 'yangLaoOrgDetail', fields => {
+    const value = numericValue(fields[key]);
+    return value === null ? [] : [value];
+  });
+}
+
+function indexedNumber(detailValue: McaPreviewResolved<number>, indexValue: number | null,
+  indexConflict: boolean, indexObservationCount: number): McaPreviewResolved<number> {
+  if (indexConflict || (detailValue.state === 'observed' && indexValue !== null && detailValue.value !== indexValue)) {
+    return { state: 'conflict', value: null, observationCount: detailValue.observationCount + indexObservationCount };
+  }
+  if (detailValue.state !== 'missing' || indexValue === null) return detailValue;
+  return { state: 'observed', value: indexValue, observationCount: indexObservationCount };
+}
+
+function indexField<T>(value: T | null, conflict: boolean, observationCount: number): McaPreviewResolved<T> {
+  return conflict ? { state: 'conflict', value: null, observationCount } :
+    value === null ? { state: 'missing', value: null, observationCount: 0 } :
+      { state: 'observed', value, observationCount };
+}
+
+function indexedTags(detailValue: McaPreviewResolved<string>, indexValue: string | null,
+  conflict: boolean, observationCount: number): McaPreviewResolved<string> {
+  if (conflict || detailValue.state === 'conflict' ||
+    (detailValue.value !== null && indexValue !== null && detailValue.value.trim() !== indexValue.trim())) {
+    return { state: 'conflict', value: null, observationCount: detailValue.observationCount + observationCount };
+  }
+  return detailValue.state === 'missing'
+    ? indexField(indexValue, false, observationCount) : detailValue;
+}
+
+function structuredTags(raw: McaPreviewResolved<string>): McaPreviewResolved<string[]> {
+  if (raw.value === null) return { ...raw, value: null };
+  return { ...raw, value: [...new Set(raw.value.split(/[,，、]/).map(tag => tag.trim()).filter(Boolean))] };
+}
+
+function feeRows(fields: Record<string, McaJsonValue>, code: string): Record<string, McaJsonValue>[] {
+  return (Array.isArray(fields.hae8List) ? fields.hae8List : [])
+    .map(object).filter((row): row is Record<string, McaJsonValue> => row !== null && row.axbe8002 === code);
+}
+
+function feeRange(observations: readonly McaPreviewDetailObservation[], code: string): McaPreviewResolved<[number, number]> {
+  return resolved(observations, 'yangLaoOrgDetail', fields => feeRows(fields, code).flatMap(row => {
+    const min = numericValue(row.axbe8004);
+    const max = numericValue(row.axbe8003);
+    return min === null || max === null ? [] : [[min, max] as [number, number]];
+  }));
+}
+
+function feeDescription(observations: readonly McaPreviewDetailObservation[], code: string): McaPreviewResolved<string> {
+  return resolved(observations, 'yangLaoOrgDetail', fields => feeRows(fields, code).flatMap(row => {
+    const value = textValue(row.axbe8005);
+    return value === null ? [] : [value];
+  }));
+}
+
+function chargeItems(observations: readonly McaPreviewDetailObservation[]): McaPreviewResolved<McaPreviewChargeItem[]> {
+  const parsed = resolved(observations, 'yangLaoOrgDetail', fields => {
+    if (!Array.isArray(fields.hae4List)) return [];
+    const rows = fields.hae4List.map(object);
+    if (rows.some(row => row === null)) return [];
+    return [rows.map(row => ({
+      id: textValue(row?.axbe4001), name: textValue(row?.axbe4002),
+      description: textValue(row?.axbe4003), standard: textValue(row?.axbe4004),
+    }))];
+  });
+  const malformed = observations.some(observation => {
+    const raw = observation.endpoints.yangLaoOrgDetail.sourceFields.hae4List;
+    return raw !== undefined && raw !== null &&
+      (!Array.isArray(raw) || raw.some(row => object(row) === null));
+  });
+  return malformed ? { state: 'conflict', value: null, observationCount: observations.length } : parsed;
+}
+
+function mapPlatformDetail(record: McaPreviewIndexRecord, detail: McaPreviewDetail): McaPreviewPlatformDetailDto {
+  const observations = detail.detailObservations;
+  const fieldConflict = (key: McaPreviewField) => record.conflictFields.includes(key) || detail.conflictFields.includes(key);
+  const indexed = <T>(key: McaPreviewField, value: T | null) => indexField(value, fieldConflict(key), record.listObservationCount);
+  const monthlyRange = feeRange(observations, '04');
+  const monthlyConflict = record.conflictFields.includes('listedMonthlyFeeMin') || record.conflictFields.includes('listedMonthlyFeeMax') ||
+    detail.conflictFields.includes('listedMonthlyFeeMin') || detail.conflictFields.includes('listedMonthlyFeeMax');
+  const indexRange = record.listedMonthlyFeeMin !== null && record.listedMonthlyFeeMax !== null
+    ? [record.listedMonthlyFeeMin, record.listedMonthlyFeeMax] as [number, number] : null;
+  const mergedMonthlyRange: McaPreviewResolved<[number, number]> = monthlyConflict ||
+    (monthlyRange.state === 'observed' && indexRange !== null && JSON.stringify(monthlyRange.value) !== JSON.stringify(indexRange))
+    ? { state: 'conflict', value: null, observationCount: monthlyRange.observationCount + record.listObservationCount }
+    : monthlyRange.state === 'missing' && indexRange !== null
+      ? { state: 'observed', value: indexRange, observationCount: record.listObservationCount } : monthlyRange;
+  const feeSummary = ([
+    ['04', '月总费用'], ['02', '床位费用'], ['01', '护理费用'], ['03', '膳食费用'],
+  ] as const).map(([code, label]) => ({ code, label,
+    range: code === '04' ? mergedMonthlyRange : feeRange(observations, code),
+    description: feeDescription(observations, code),
+  }));
+  const areaSqm = resolved(observations, 'orgBaseDetail', fields => {
+    const value = numericValue(fields.ahae0021);
+    return value === null ? [] : [value];
+  });
+  const countConflict = record.conflictFields.includes('evaluationCount') || detail.conflictFields.includes('evaluationCount');
+  const scoreConflict = record.conflictFields.includes('overallEvaluation') || detail.conflictFields.includes('overallEvaluation');
+  const evaluationCount = indexed('evaluationCount', record.evaluationCount);
+  const evaluationScore = indexed('overallEvaluation', record.overallEvaluation);
+  return {
+    identity: {
+      facilityType: indexed('facilityTypeLabel', record.facilityTypeLabel),
+      starCode: indexed('platformStarCode', record.platformStarCode),
+      functionPositioning: indexed('functionPositioningLabel', record.functionPositioningLabel),
+      region: indexField(record.regionPath ?? record.regionLabel,
+        fieldConflict('regionPath') || (record.regionPath === null && fieldConflict('regionLabel')),
+        record.listObservationCount),
+      address: indexed('address', record.address),
+    },
+    tags: structuredTags(indexedTags(baseString(observations, 'tag'), record.platformTagsRaw,
+      fieldConflict('platformTagsRaw'), record.listObservationCount)),
+    subsidyCode: baseString(observations, 'ahae0635'),
+    contactName: baseString(observations, 'ahae2572'),
+    contactPhone: baseString(observations, 'ahae2573'),
+    pointRaw: nestedString(observations, 'orgBaseInfo', 'point'),
+    photoCount: photoCount(observations),
+    areaSqm,
+    introduction: nestedString(observations, 'orgBaseInfo', 'infoDetail'),
+    service: {
+      content: nestedString(observations, 'orgServiceInfo', 'serviceDetail'),
+      team: nestedString(observations, 'orgServiceInfo', 'serviceTeam'),
+      hours: nestedString(observations, 'orgServiceInfo', 'serviceTime'),
+      scope: nestedString(observations, 'orgServiceInfo', 'serviceRadius'),
+      explanation: nestedString(observations, 'orgServiceInfo', 'serviceRadiusExplain'),
+    },
+    beds: {
+      total: indexedNumber(careNumber(observations, 'ahae2347'), record.listedBeds,
+        record.conflictFields.includes('listedBeds') || detail.conflictFields.includes('listedBeds'), record.listObservationCount),
+      dayCare: careNumber(observations, 'ahae0019'),
+      fullCare: careNumber(observations, 'ahae2343'),
+      nursing: indexedNumber(careNumber(observations, 'ahae2323'), record.nursingBeds,
+        record.conflictFields.includes('nursingBeds') || detail.conflictFields.includes('nursingBeds'), record.listObservationCount),
+    }, feeSummary, charges: chargeItems(observations),
+    evaluation: { state: countConflict || scoreConflict ? 'conflict' : record.evaluationCount === null ? 'missing' : 'observed',
+      text: countConflict || scoreConflict ? '平台评价观察值冲突，见原始证据' : evaluation(record) ?? '原平台未提供',
+      count: evaluationCount, score: evaluationScore },
+  };
 }
 
 /** Presentation values only; never parse unreviewed sourceFields in the browser. */
@@ -141,8 +383,9 @@ export function mapMcaPreviewDetail(record: McaPreviewIndexRecord, detail: McaPr
     };
   });
   return {
-    card: mapMcaPreviewCard(record), facts, snapshotId,
+    card: mapMcaPreviewCard({ ...record, conflictFields: [...conflicts] }), facts, snapshotId,
     conflictLabels: mcaPreviewFields.filter(key => conflicts.has(key)).map(key => labels[key]),
     listObservations: detail.listObservations, detailObservations: detail.detailObservations,
+    platformDetail: mapPlatformDetail(record, detail),
   };
 }

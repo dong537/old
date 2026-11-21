@@ -3,6 +3,7 @@ import test from 'node:test';
 import * as React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import RulesPage from '../app/rules/page';
+import NotFound from '../app/not-found';
 import nationalManifest from '../public/data/qcc-national/manifest.v1.json';
 import officialManifest from '../public/data/national-official/manifest.v1.json';
 import institutionReferenceManifest from '../public/data/qcc-institutions/manifest.v1.json';
@@ -20,7 +21,8 @@ test('methodology distinguishes private originals from contact-masked public fie
 
 test('methodology discloses national candidate coverage and its limits', () => {
   const html = renderToStaticMarkup(React.createElement(RulesPage));
-  assert.match(html, /收录范围：广州档案、全国机构线索、官方来源与登记主体候选/);
+  assert.match(html, /收录范围：全国线索、官方来源、登记主体与广州专项/);
+  assert.ok(html.indexOf('全国机构线索来自') < html.indexOf('广州档案收录'));
   assert.match(html, new RegExp(`${nationalManifest.sourceFiles.length} 份企查查导出快照`));
   assert.match(html, new RegExp(`${nationalManifest.rowCount.toLocaleString('zh-CN')} 条原始行`));
   assert.match(html, /不是全国养老机构名录或当前在营数/);
@@ -41,4 +43,17 @@ test('methodology discloses national candidate coverage and its limits', () => {
   // Next Link resolves basePath and trailing slashes during the Next build, not this standalone render.
   assert.ok(hrefs.some((href) => href.replace(/\/$/, '') === '/quanguo/zhuti'), `missing national directory link: ${JSON.stringify(hrefs)}`);
   assert.ok(hrefs.includes(`${prefix}/data/qcc-national/manifest.v1.json`), `missing national manifest link: ${JSON.stringify(hrefs)}`);
+});
+
+test('global recovery links lead to the nationwide institution directory', () => {
+  const notFound = renderToStaticMarkup(React.createElement(NotFound));
+  assert.match(notFound, /全国目录/);
+  assert.ok(notFound.includes('href="/quanguo/cankao/"'));
+  assert.doesNotMatch(notFound, /回到广州目录/);
+  assert.ok(!notFound.includes('href="/guangzhou/jigou/"'));
+
+  const rules = renderToStaticMarkup(React.createElement(RulesPage));
+  assert.match(rules, new RegExp('href="/quanguo/cankao/?"[^>]*>查找养老机构 →</a>'));
+  assert.match(rules, new RegExp('href="/quanguo/cankao/?"[^>]*>返回查找养老机构</a>'));
+  assert.match(rules, /查看广州名单 JSON/);
 });

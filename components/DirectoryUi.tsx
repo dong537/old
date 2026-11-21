@@ -19,7 +19,7 @@ export function Stat({ label, value, hint }: { label: string; value: ReactNode; 
 }
 
 export function PageTitle({ title, lead, extra }: { title: ReactNode; lead?: ReactNode; extra?: ReactNode }) {
-  return <div className="flex flex-col gap-2"><div className="flex flex-wrap items-center justify-between gap-3"><h1 className="m-0 text-[26px] font-bold leading-tight">{title}</h1>{extra}</div>{lead && <p className="m-0 max-w-[820px] text-body">{lead}</p>}</div>;
+  return <div className="flex flex-col gap-2 border-b border-line pb-5"><div className="flex flex-wrap items-center justify-between gap-3"><h1 className="m-0 border-l-4 border-brand pl-4 text-[25px] font-bold leading-tight sm:text-[29px]">{title}</h1>{extra}</div>{lead && <p className="m-0 max-w-[860px] pl-5 text-[14px] leading-6 text-body sm:text-[15px]">{lead}</p>}</div>;
 }
 
 export function Empty({ children }: { children: ReactNode }) {

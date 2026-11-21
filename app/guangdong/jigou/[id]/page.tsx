@@ -6,7 +6,8 @@ import { ProvinceCoverageNote } from '@/components/ProvinceCoverageNote';
 import { ProvinceReturnToList } from '@/components/ProvinceReturnToList';
 import { ProvinceSourceLink } from '@/components/ProvinceSourceLink';
 import { SectionTitle } from '@/components/DirectoryUi';
-import { ProfileToc, type ProfileTocItem } from '@/components/ProfileToc';
+import { PublicInstitutionBottomNav, PublicInstitutionDetailSections, PublicInstitutionHero, PublicInstitutionSummary } from '@/components/PublicInstitutionDetailSections';
+import { mapProvinceSourceDetail } from '@/lib/institution-detail-dto';
 import { provinceCatalog } from '@/lib/province-public';
 import { sitePath } from '@/lib/site-path';
 
@@ -28,11 +29,16 @@ export default async function ProvinceRecordPage({ params }: Props) {
   const { id } = await params;
   const record = provinceCatalog.records.find(item => item.id === id);
   if (!record) notFound();
+  const dto = mapProvinceSourceDetail(record);
   const nameKey = record.name.replace(/\s+/gu, '');
   const sameName = provinceCatalog.records.filter(item => item.city === record.city && item.name.replace(/\s+/gu, '') === nameKey);
-  const toc: ProfileTocItem[] = [
+  const toc = [
     { id: 'overview', label: '概况' },
-    { id: 'fields', label: '来源资料' },
+    { id: 'fields', label: '基本信息' },
+    { id: 'services', label: '服务信息' },
+    { id: 'care', label: '机构养老' },
+    { id: 'reviews', label: '用户评价' },
+    { id: 'record', label: '原文条目' },
     ...(sameName.length > 1 ? [{ id: 'same-name', label: '同名记录' }] : []),
     { id: 'sources', label: '来源' },
     { id: 'checklist', label: '核对建议' },
@@ -44,18 +50,18 @@ export default async function ProvinceRecordPage({ params }: Props) {
     <a href={sitePath('#sources')} className="text-[13px]">查看来源与时间 →</a>
   </div>;
 
-  return <>
-    <nav id="top" tabIndex={-1} aria-label="面包屑" className="text-[13px] text-sub"><a href={sitePath('/quanguo/laiyuan/')}>全国官方来源记录</a><span className="mx-2" aria-hidden="true">/</span><span>广东省 · {record.city}</span><span className="mx-2" aria-hidden="true">/</span>来源记录详情</nav>
-    <ProfileToc items={toc} variant="bar" />
-    <div className="flex items-start gap-6">
-      <ProfileToc items={toc} variant="side" />
-      <div className="flex min-w-0 flex-1 flex-col gap-5">
-        <section id="overview" tabIndex={-1} className="section flex flex-col gap-3"><div className="flex flex-col gap-2"><span className="tag w-fit">官方来源记录 · 待核线索</span><h1 className="m-0 break-words text-[28px] font-bold leading-tight sm:text-[32px]">{record.name}</h1><p className="m-0 text-body">广东省 · {record.city} · {record.evidenceType}</p><p className="m-0 text-body">这是官方来源中的一条原文名称记录。记录编号仅定位这份冻结快照，不是机构或登记主体的统一 ID。</p></div>
-          <div className="flex flex-wrap items-center justify-between gap-2 text-[13px] text-sub"><span>来源记录编号 {record.id}</span><Suspense fallback={<a href={sitePath('/quanguo/laiyuan/')} className="underlink text-sm">← 返回全国官方来源</a>}><ProvinceReturnToList /></Suspense></div>
-        </section>
-        <div className="lg:hidden">{verification}</div>
-        <ProvinceCoverageNote city={record.city} />
-        <section id="fields" tabIndex={-1} className="section"><SectionTitle title="原文条目" extra="仅展示这条公开来源已核准投影的字段" /><dl className="m-0 grid gap-4 text-[14px] sm:grid-cols-2">
+  return <div className="institution-detail-page">
+    <nav id="top" tabIndex={-1} aria-label="面包屑" className="flex flex-wrap gap-x-2 bg-[#F68A13] px-5 py-3 text-[13px] text-white sm:px-8 lg:px-20"><a href={sitePath('/quanguo/laiyuan/')} className="text-white hover:text-white">全国官方来源记录</a><span aria-hidden="true">›</span><span>广东省 · {record.city}</span><span aria-hidden="true">›</span><span>来源记录详情</span></nav>
+    <div className="flex min-w-0 flex-col gap-5">
+      <PublicInstitutionHero dto={dto} sourceLabel="来源记录 · 待核线索" sourceTitle={record.evidenceType + ' · 来源记录编号 ' + record.id} sourceDate={record.sourceAsOf} sourceLink={<ProvinceSourceLink url={record.sourceUrl} />} returnHref="/guangdong/jigou/" returnLink={<Suspense fallback={<a href={sitePath('/quanguo/laiyuan/')} className="underlink text-sm">← 返回全国官方来源</a>}><ProvinceReturnToList /></Suspense>}>
+        <p className="mb-0 mt-3 max-w-[850px] text-[13px] leading-6 text-body">这是官方来源中的一条原文名称记录。记录编号仅定位这份冻结快照，不是机构或登记主体的统一 ID；不证明当前在营、空床或签约主体。</p>
+        {record.sourceStatusNote && <p className="mb-0 mt-2 text-[13px] text-caution">原文状态提示：{record.sourceStatusNote}。不能据此推断当前营业或服务状态。</p>}
+      </PublicInstitutionHero>
+      <PublicInstitutionSummary dto={dto} />
+      <PublicInstitutionDetailSections dto={dto} />
+      {verification}
+      <ProvinceCoverageNote city={record.city} />
+      <section id="record" tabIndex={-1} className="section"><SectionTitle title="原文条目" extra="仅展示这条公开来源已核准投影的字段" /><dl className="m-0 grid gap-4 text-[14px] sm:grid-cols-2">
       <div><dt className="text-sub">原文名称</dt><dd className="m-0 break-words font-semibold">{record.name}</dd></div>
       <div><dt className="text-sub">所属城市</dt><dd className="m-0">{record.city}</dd></div>
       <div><dt className="text-sub">证据类型</dt><dd className="m-0 break-words">{record.evidenceType}</dd></div>
@@ -68,8 +74,7 @@ export default async function ProvinceRecordPage({ params }: Props) {
         {sameName.length > 1 && <section id="same-name" tabIndex={-1} className="section"><SectionTitle title="同城同名记录" extra={sameName.length + ' 条，尚未合并身份'} /><p className="m-0 text-body">同城同名不证明这些条目属于同一服务点或登记主体，请逐条核对来源。</p><ul className="m-0 list-disc space-y-1 pl-5 text-sm">{sameName.filter(item => item.id !== record.id).map(item => <li key={item.id}><a href={sitePath('/guangdong/jigou/' + item.id + '/')}>{item.id} · {item.evidenceType}</a></li>)}</ul></section>}
         <section id="sources" tabIndex={-1} className="section"><SectionTitle title="来源与时间" /><div className="flex flex-col gap-3 text-[14px]"><ProvinceSourceLink url={record.sourceUrl} /><p className="m-0 break-all text-sub">原始来源：{record.sourceUrl}</p><p className="m-0 text-sub">站内快照归档于 <time dateTime={provinceCatalog.archivedAt}>{provinceCatalog.archivedAt}</time>。归档日期不代替原文发布日期或资料期；部分记录缺少逐行原件校验或可定位源行号，请到原始来源核对。</p><a href={sitePath('/data/guangdong-source-records.v1.json')} className="underlink">查看站内公开记录 JSON</a></div></section>
         <section id="checklist" tabIndex={-1} className="section"><SectionTitle title="联系与探访前，建议核对" /><p className="m-0 text-body">原文条目也可能指长者、社区、居家服务中心或医院，不能统称已登记养老机构。联系或实地探访前，需再核实服务场所、登记身份及当前运营情况。本目录不提供实时空床、价格或预约。</p></section>
-      </div>
-      <aside className="sticky top-4 hidden w-[320px] shrink-0 flex-col gap-4 lg:flex">{verification}</aside>
     </div>
-  </>;
+    <PublicInstitutionBottomNav name={record.name} items={toc} />
+  </div>;
 }

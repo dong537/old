@@ -6,6 +6,11 @@ import path from 'node:path';
 const root = path.resolve('out');
 const basePath = process.env.ELDERCARE_PREVIEW_BASE_PATH ?? '';
 if (basePath && basePath !== '/eldercare') throw new Error('ELDERCARE_PREVIEW_BASE_PATH只支持/eldercare。');
+const homeHtml = await readFile(path.join(root, 'index.html'), 'utf8');
+const assetPaths = [...homeHtml.matchAll(/(?:src|href)="([^"]*\/_next\/[^\"]+)"/g)].map(match => match[1]);
+if (assetPaths.length === 0 || assetPaths.some(asset => !asset.startsWith(basePath + '/_next/'))) {
+  throw new Error('构建资源路径前缀与本地预览 base path 不一致。请使用相同的 NEXT_PUBLIC_ELDERCARE_BASE_PATH 和 ELDERCARE_PREVIEW_BASE_PATH 重新构建并预览。');
+}
 const mime = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.txt': 'text/plain; charset=utf-8', '.ico': 'image/x-icon', '.svg': 'image/svg+xml' };
 const server = http.createServer(async (req, res) => {
   let target;

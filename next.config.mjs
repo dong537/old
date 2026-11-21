@@ -19,7 +19,8 @@ const config = (phase) => {
     trailingSlash: true,
     poweredByHeader: false,
     experimental: { cpus: 1 },
-    distDir: privatePreview ? '.next-local' : '.next',
+    // NEXT_PUBLIC_* values are compiled into client chunks; never share them across base paths.
+    distDir: privatePreview ? (basePath ? '.next-local-eldercare' : '.next-local') : '.next',
     images: { unoptimized: true },
     webpack(config) {
       config.resolve.alias['@company-data'] = path.resolve(

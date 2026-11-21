@@ -125,7 +125,7 @@ test('official area selection keeps a keyword entered before choosing a city', (
   const html = renderToStaticMarkup(React.createElement(NationalOfficialDirectoryContent, {
     manifest, index: null, query: { q: '养老' },
   }));
-  const selectionForm = html.match(/<form\b[^>]*>[\s\S]*?<\/form>/)?.[0];
+  const selectionForm = html.match(/<form\b[^>]*aria-label="选择官方来源省份和城市"[^>]*>[\s\S]*?<\/form>/)?.[0];
   assert.ok(selectionForm);
   assert.ok(selectionForm.includes('action="' + sitePath('/quanguo/laiyuan/') + '"'));
   assert.match(selectionForm, /<input type="hidden" name="q" value="养老"\/>/);
@@ -190,22 +190,33 @@ test('official source pages expose scope, dated provenance and unknown values', 
     assert.ok(selected.includes('href="/eldercare/quanguo/laiyuan/detail/?province=chongqing'));
     const detail = renderToStaticMarkup(React.createElement(NationalOfficialDetailContent, { manifest, record: chunk.records[1], from: officialListHref({ province: 'chongqing', city: 'chongqing', q: '乙' }) }));
     assert.match(detail, /aria-label="本页目录"/);
-    for (const section of ['overview', 'fields', 'sources', 'checklist']) {
+    for (const section of ['overview', 'fields', 'services', 'care', 'reviews', 'sources', 'checklist']) {
       assert.ok(detail.includes('id="' + section + '"'), section + ' must have a matching section');
       assert.ok(detail.includes('href="#' + section + '"'), section + ' must be reachable from the archive TOC');
     }
     assert.match(detail, /核对这条官方记录/);
+    assert.ok(detail.indexOf('<section id="overview"') < detail.indexOf('<section aria-label="床位与费用摘要"'));
+    assert.ok(detail.indexOf('<section aria-label="床位与费用摘要"') < detail.indexOf('<section id="fields"'));
+    assert.ok(detail.indexOf('<section id="reviews"') < detail.indexOf('核对这条官方记录'));
     assert.doesNotMatch(detail, /在线预约暂未开放|预约探访/);
     assert.match(detail, /重庆官方网页/);
     assert.match(detail, /原文标题/);
     assert.match(detail, /官方公开材料中的一条来源记录/);
+    const hero = detail.slice(detail.indexOf('<section id="overview"'), detail.indexOf('<section id="fields"'));
+    assert.match(hero, /养老服务机构/);
+    assert.match(hero, /2025-12-22/);
+    assert.match(hero, /资料截至.*原文未说明/);
+    assert.match(hero, /打开官方原文核对/);
     assert.doesNotMatch(detail, /原始发布单位与标题/);
     assert.match(detail, /2025-12-22/);
     assert.match(detail, /来源第 2 条/);
     assert.doesNotMatch(detail, /工作表第/);
-    assert.match(detail, /床位数.*原表未提供/);
-    assert.match(detail, /不等于当前空床/);
-    assert.doesNotMatch(detail, /联系电话|可立即预约/);
+    assert.match(detail, /原表床位数.*本来源未提供/);
+    assert.match(detail, /提供服务内容.*照护/);
+    assert.match(detail, /服务团队.*本来源未提供/);
+    assert.match(detail, /不代表当前空床/);
+    assert.match(detail, /联系电话：<\/dt><dd[^>]*>本来源未提供/);
+    assert.doesNotMatch(detail, /href="tel:|可立即预约/);
   } finally {
     if (previous === undefined) delete process.env.NEXT_PUBLIC_ELDERCARE_BASE_PATH; else process.env.NEXT_PUBLIC_ELDERCARE_BASE_PATH = previous;
   }

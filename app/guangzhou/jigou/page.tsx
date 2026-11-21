@@ -10,10 +10,10 @@ export const metadata = { title: '找养老机构 · 按名称、行政区与地
 
 export default function DirectoryPage() {
   return <div className="flex flex-col gap-6">
-    <PageTitle title="找养老机构" lead={<>广州官方名单收录的养老机构，每家一张档案。可按名称、区或地址检索；<br className="hidden lg:block" />备案床位、电话和预收费标记来自官方快照。</>} />
+    <PageTitle title="广州官方养老机构名单" lead="按名称、行政区或地址查询广州官方名单。备案床位、电话和预收费标记均为名单快照，详情页可追溯原文与资料日期。" />
     <Suspense fallback={<div className="flex flex-col gap-5">
       <div className="notice"><p>正在加载检索功能，以下先显示原表前20家机构，尚未应用筛选条件。</p><p className="mt-2">若筛选一直未出现，请启用浏览器JavaScript后刷新；也可以<a href={sitePath(catalog.source.url)} className="underlink">查看官方名单</a>或<a href={sitePath("/data/guangzhou-institutions.v1.json")} className="underlink">完整公开数据</a>。</p></div>
-      <p className="m-0 text-[15px]">共 <b>{catalog.institutions.length}</b> 家 · 原表前20家（未筛选）</p>
+      <p className="m-0 text-[15px]">共 <b>{catalog.institutions.length}</b> 条官方名单记录 · 原表前20条（未筛选）</p>
       <InstitutionList items={catalog.institutions.slice(0, 20)} />
     </div>}>
       <DirectoryView institutions={catalog.institutions} districts={districts} />

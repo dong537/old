@@ -52,6 +52,11 @@ test('national reference result keeps source identity and unknown date beside th
   assert.match(card, /资料时点未知/);
   assert.match(card, /查看线索与来源/);
   assert.doesNotMatch(card, /当前空床|参考月费/);
+  assert.match(html, /aria-label="检索养老机构来源线索"/);
+  assert.ok(html.indexOf('aria-label="检索养老机构来源线索"') < html.indexOf('aria-label="查找条件"'));
+  assert.match(card, /护理型床位[^<]*本来源未提供/);
+  assert.match(card, /月费用[^<]*本来源未提供/);
+  assert.match(card, /机构星级[^<]*本来源未提供/);
 });
 
 test('official result keeps published date, source period and original-document exit on its card', () => {
@@ -70,6 +75,12 @@ test('official result keeps published date, source period and original-document 
   assert.doesNotMatch(card, /当前空床|参考月费/);
   const missing = html.match(/<article\b[^>]*>[^]*?丙敬老院[^]*?<\/article>/)?.[0] ?? '';
   assert.match(missing, /床位数[^<]*原表未提供/);
+  assert.match(html, /aria-label="检索官方来源记录"/);
+  assert.ok(html.indexOf('aria-label="检索官方来源记录"') < html.indexOf('aria-label="官方来源地区条件"'));
+  assert.match(card, /护理型床位[^<]*本来源未提供/);
+  assert.match(card, /月费用[^<]*本来源未提供/);
+  assert.match(card, /机构星级[^<]*本来源未提供/);
+  assert.match(html, /<aside[^>]*aria-label="官方来源地区条件"[^>]*>\s*<details[^>]*>/);
 });
 
 test('Guangdong source row keeps its own evidence type and dates with a direct source exit', () => {
@@ -88,4 +99,5 @@ test('Guangdong source row keeps its own evidence type and dates with a direct s
   assert.match(card, /资料期 2026-09/);
   assert.ok(card.includes('href="https://example.test/guangdong"'));
   assert.match(card, /打开官方原文核对/);
+  assert.match(html, /<aside[^>]*aria-label="官方来源地区条件"[^>]*>\s*<details[^>]*>/);
 });

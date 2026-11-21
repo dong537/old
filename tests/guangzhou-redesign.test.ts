@@ -17,16 +17,18 @@ test('Guangzhou entry offers district browsing before advice and hides unavailab
   assert.doesNotMatch(html, /本月榜单|已认领并核验|失能老人月费中位数/);
 });
 
-test('Guangzhou profile puts provenance before fee marks and removes empty panels', () => {
+test('Guangzhou profile keeps the official-style sections before provenance and fee marks', () => {
   // The route imports the Next-only @company-data alias, so verify its page structure
   // here and leave rendered output to the static build/browser checks.
   const source = readFileSync('app/guangzhou/jigou/[id]/page.tsx', 'utf8');
-  const overview = source.indexOf('<section id="overview"');
+  const overview = source.indexOf('<PublicInstitutionHero ');
+  const summary = source.indexOf('<PublicInstitutionSummary ');
+  const details = source.indexOf('<PublicInstitutionDetailSections ');
   const provenance = source.indexOf('<section id="sources"');
   const feeMarks = source.indexOf('<section id="custody"');
   const contact = source.indexOf('id="contact"');
-  assert.ok(overview >= 0 && provenance > overview && feeMarks > provenance,
-    '来源应紧邻概况且先于收费标记');
+  assert.ok(overview >= 0 && summary > overview && details > summary && provenance > details && feeMarks > provenance,
+    '官网式详情应先展示概况与主要字段，再列来源和收费标记');
   assert.ok(contact > overview && contact < provenance, '联系出口应在来源之前');
   assert.doesNotMatch(source, /<section id="(?:fees|medical|visits|followups|history)"/);
   assert.match(source, /WITHHELD_PHONE_MESSAGE/);

@@ -67,12 +67,15 @@ export function DirectoryView({ institutions, districts }: { institutions: Insti
     event.currentTarget.href = sitePath(compareUrl(currentSelection().ids, currentUrl));
   };
   const navigationEvents = { onClick: syncSelection, onAuxClick: syncSelection, onContextMenu: syncSelection };
-  return <div className="flex flex-col gap-6">
-    <DirectoryFilters q={result.q} district={result.district} districts={districts} counts={counts} feeFilters={result.feeFilters} feeCounts={feeCounts} compare={compare} onNavigate={syncSelection} />
+  return <div className="grid items-start gap-6 lg:grid-cols-[270px_minmax(0,1fr)]">
+    <aside className="min-w-0 lg:sticky lg:top-4" aria-label="机构查询条件">
+      <DirectoryFilters q={result.q} district={result.district} districts={districts} counts={counts} feeFilters={result.feeFilters} feeCounts={feeCounts} compare={compare} onNavigate={syncSelection} />
+    </aside>
+    <div className="flex min-w-0 flex-col gap-5">
     {result.issues.length > 0 && <div className="notice" role="status"><ul className="list-disc space-y-1 pl-5">{result.issues.map(issue => <li key={issue}>{issue}</li>)}</ul><p className="mt-2">可以调整条件或<a href={sitePath(resetUrl)} {...navigationEvents} className="underlink">清空筛选，查看全部机构</a>。</p></div>}
     {(selection.issues.length > 0 || compareIssue) && <div className="notice" role="status">{[...selection.issues, compareIssue].filter(Boolean).join(' ')}</div>}
     <div className="flex flex-wrap items-baseline justify-between gap-3">
-      <span className="text-[15px]" role="status" aria-live="polite">共 <b>{result.total}</b> 家</span>
+      <span className="text-[15px]" role="status" aria-live="polite">找到 <b>{result.total}</b> 条官方名单记录</span>
       <span className="text-[13px] text-sub">按官方名单原表顺序 · 不代表服务质量推荐</span>
     </div>
     {selection.ids.length > 0 && <div className="rounded-lg border border-brand-line bg-brand-tint p-4 text-sm text-brand-ink" role="status" aria-live="polite">
@@ -101,5 +104,6 @@ export function DirectoryView({ institutions, districts }: { institutions: Insti
       <p className="m-0 text-center text-[13px] text-sub">第 {result.page} / {result.pageCount} 页 · 每页 20 家</p>
     </>}
     <p className="m-0 text-[13px] text-sub">官方名单没有月费金额数据；押金和会员费仅为原表的是否收取标记，不含金额或存管状态。</p>
+    </div>
   </div>;
 }

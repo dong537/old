@@ -89,15 +89,34 @@ test('Guangzhou entry points to nationwide official records separately from cand
   assert.match(html, /href="\/quanguo\/cankao"/);
 });
 
-test('home starts with a province and keyword search and distinguishes the Guangzhou official list', () => {
+test('home starts with nationwide search and separates source types', () => {
   const home = renderToStaticMarkup(React.createElement(HomePage));
   const form = home.match(/<form\b[^>]*action="(?:\/eldercare)?\/quanguo\/cankao\/?"[^>]*>/)?.[0];
   assert.ok(form, '首页应直接提供全国机构线索搜索');
-  assert.match(home, /<select\b[^>]*name="province"[^>]*required/);
+  assert.match(home, /<select\b[^>]*name="province"[^>]*>/);
+  assert.match(home, /<option value="" selected="">全部地区<\/option>/);
   assert.match(home, /<input\b[^>]*name="q"[^>]*>/);
-  assert.match(home, /href="(?:\/eldercare)?\/guangzhou\/jigou\/?"/);
-  assert.match(home, /广州官方名单/);
+  assert.match(home, /href="(?:\/eldercare)?\/quanguo\/cankao\/?"/);
+  assert.match(home, /全国机构来源线索/);
   assert.match(home, /核对官方来源/);
+  assert.match(home, /登记主体候选/);
+  assert.doesNotMatch(home, /href="(?:\/eldercare)?\/guangzhou\/jigou\/?"/);
+});
+
+test('home follows the observed portal order while keeping unsupported services explicit', () => {
+  const home = renderToStaticMarkup(React.createElement(HomePage));
+  const order = ['id="home-hero"', 'aria-label="首页热点服务"', 'id="service-query"', 'id="online-services"', 'id="region-index"', 'id="home-entrances"'];
+  for (let index = 1; index < order.length; index++) {
+    assert.ok(home.indexOf(order[index - 1]) < home.indexOf(order[index]), `wrong homepage section order: ${order[index]}`);
+  }
+  assert.match(home, /aria-label="在线办理类别"/);
+  assert.match(home, /id="online-tab-personal" role="tab"[^>]*aria-selected="true"/);
+  assert.match(home, /办理前查机构来源线索/);
+  assert.match(home, /办理前核对资料日期/);
+  assert.match(home, /按省份展开来源线索/);
+  assert.doesNotMatch(home, /养老地图分类|elderlyCareMap|机构地图点位/);
+  assert.match(home, /官网办理事项与地区资格请到原站核对/);
+  assert.doesNotMatch(home, /预约成功|当前空床|立即申领/);
 });
 
 test('header offers real navigation without disabled visitor actions or duplicate home search', () => {
@@ -106,7 +125,28 @@ test('header offers real navigation without disabled visitor actions or duplicat
   assert.match(header, /<summary[^>]*>菜单<\/summary>/);
   assert.match(header, /href="(?:\/eldercare)?\/quanguo\/cankao\/?"[^>]*>找养老机构<\/a>/);
   assert.match(header, /href="(?:\/eldercare)?\/quanguo\/laiyuan\/?"[^>]*>官方来源<\/a>/);
+  assert.match(header, /href="(?:\/eldercare)?\/quanguo\/zhuti\/?"[^>]*>登记主体<\/a>/);
+  assert.doesNotMatch(header, /href="(?:\/eldercare)?\/guangzhou\/jigou\/?"/);
   assert.doesNotMatch(header, /<button[^>]*disabled/);
   assert.doesNotMatch(header, /<form\b/);
+});
+
+test('portal header exposes service categories without a map destination', () => {
+  const header = renderToStaticMarkup(withNavigation('/', '',
+    React.createElement(SiteHeader, { publishedAt: catalog.source.publishedAt })));
+  const desktop = header.match(/<nav aria-label="主导航"[\s\S]*?<\/nav>/)?.[0] ?? '';
+  for (const label of ['首页', '政策资讯', '服务查询', '在线办理', '养老人才/服务', '安全教育', '养老服务消费补贴']) {
+    assert.match(desktop, new RegExp(label), label);
+  }
+  assert.ok(desktop.includes('href="https://yanglao.mca.gov.cn/#/index/newLasterList"'));
+  assert.ok(desktop.includes('href="https://yanglao.mca.gov.cn/#/index/personGuideList"'));
+  assert.doesNotMatch(desktop, /养老地图|elderlyCareMap/);
+  assert.ok(desktop.includes('href="https://yanglao.mca.gov.cn/#/index/nurseQuery"'));
+  assert.ok(desktop.includes('href="https://yanglao.mca.gov.cn/#/index/fireSafetyPublicity"'));
+  assert.ok(desktop.includes('href="/quanguo/cankao"'));
+  assert.match(desktop, /target="_blank"/);
+  assert.match(desktop, /外部/);
+  assert.ok(header.includes('href="/quanguo/laiyuan"'));
+  assert.ok(header.includes('href="/quanguo/zhuti"'));
 });
 

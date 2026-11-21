@@ -92,7 +92,7 @@ test('prepayment chips show actual facet counts and keep the other filters and c
 test('invalid prepayment filter reports correction and does not hide all results', () => {
   const html = renderDirectory('deposit=free');
   assert.match(textContent(html), /押金筛选参数无效，已恢复为全部/);
-  assert.match(textContent(html), /共 235 家/);
+  assert.match(textContent(html), /找到 235 条官方名单记录/);
 });
 
 test('directory starts with keyword search and shows only supported filters', () => {
