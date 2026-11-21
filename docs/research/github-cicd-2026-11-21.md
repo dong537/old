@@ -33,4 +33,4 @@ main → Actions checkout → npm ci → verify:release → out/ + release.txt �
 2. 在该 Environment 的 Variables 中设置 ELDERCARE_SSH_USER；SSH 若不在 22 端口，另设 ELDERCARE_SSH_PORT。主机和公开验收 URL 由工作流固定为现有 IP，不从用户输入拼接。
 3. 在 Environment Secrets 中设置专用部署私钥 ELDERCARE_SSH_PRIVATE_KEY，以及从服务器控制台独立核对指纹后的完整 known_hosts 行 ELDERCARE_SSH_KNOWN_HOSTS。非 22 端口的行应使用 [124.223.86.157]:端口 格式。不得把私钥、聊天记录里的旧凭据或未经核对的 ssh-keyscan 输出提交到仓库。
 4. 服务器部署账号须能写 /var/www/eldercare/releases/ 及 /var/www/eldercare/current 所在目录，并已有指向旧版本的 current 软链接；只授予该目录的权限，不授予改动 Nginx、根站或 /tk-license/ 的权限。先从 Actions Runner 确认 SSH 端口可达。
-5. 在 Actions → Deploy eldercare preview → Run workflow 选择 main；构建作业先验证并保存 14 天的归档。若 Environment 已配置 Required reviewers，部署作业先等待审批；否则手动触发后直接上传并切换。成功日志应显示提交 SHA，公开 release.txt 与之相同。失败时查看回滚作业与 current 指向；不要因为归档已生成就认定已上线。
+5. 在 Actions → Deploy eldercare preview → Run workflow 选择 main。默认 deploy=false，仅构建、验证并保存 14 天的归档；明确选择 deploy=true 才运行远端发布。若 Environment 已配置 Required reviewers，部署作业先等待审批；否则手动触发后直接上传并切换。成功日志应显示提交 SHA，公开 release.txt 与之相同。失败时查看回滚作业与 current 指向；不要因为归档已生成就认定已上线。
