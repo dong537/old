@@ -4,7 +4,9 @@ import * as React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { InstitutionReferenceDirectoryContent } from '../components/InstitutionReferenceDirectoryView';
 import { InstitutionReferenceProvincePage } from '../components/InstitutionReferenceProvincePage';
-import type { ReferenceIndex, ReferenceManifest } from '../lib/institution-reference-types';
+import { InstitutionReferenceDetailContent } from '../components/InstitutionReferenceDetailView';
+import { REFERENCE_SOURCE_FIELD_NAMES } from '../lib/institution-reference-types';
+import type { ReferenceDetailRecord, ReferenceIndex, ReferenceManifest } from '../lib/institution-reference-types';
 
 Object.assign(globalThis, { React });
 
@@ -55,4 +57,19 @@ test('static province page keeps city selection beside source rows and the origi
   assert.ok(html.indexOf('aria-label="检索本省养老机构来源线索"') < html.indexOf('aria-label="地区分组"'));
   assert.match(html, /护理型床位[^<]*本来源未提供/);
   assert.match(html, /月费用[^<]*本来源未提供/);
+});
+
+test('QCC source detail offers an explicitly unverified MCA name search', () => {
+  const record: ReferenceDetailRecord = {
+    id: 'row-2', sourceRow: 2, name: '甲养老院', region: '河北省石家庄市',
+    address: '甲路1号', beds: 0, creditCode: null, codeStatus: 'missing',
+    sourceFields: Object.fromEntries(REFERENCE_SOURCE_FIELD_NAMES.map(key => [key, null])),
+  };
+  const html = renderToStaticMarkup(React.createElement(InstitutionReferenceDetailContent, {
+    manifest, record, officialCandidates: [], registryCandidates: [],
+    provinceName: '河北省', cityName: '石家庄市', from: null,
+  }));
+  assert.match(html, /href="(?:\/eldercare)?\/quanguo\/pingtai\/\?q=%E7%94%B2%E5%85%BB%E8%80%81%E9%99%A2"/);
+  assert.match(html, /候选，未核同一机构/);
+  assert.doesNotMatch(html, /已关联民政部平台机构/);
 });

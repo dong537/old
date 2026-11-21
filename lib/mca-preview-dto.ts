@@ -44,6 +44,14 @@ export interface McaPreviewResolved<T> {
   observationCount: number;
 }
 
+export interface McaPreviewListExtrasDto {
+  listedContactPhone: McaPreviewResolved<string>;
+  serviceCategoryLabel: McaPreviewResolved<string>;
+  subsidyCode: McaPreviewResolved<string>;
+  dayCareBeds: McaPreviewResolved<number>;
+  fullCareBeds: McaPreviewResolved<number>;
+}
+
 export interface McaPreviewChargeItem {
   id: string | null;
   name: string | null;
@@ -87,6 +95,8 @@ export interface McaPreviewPlatformDetailDto {
     count: McaPreviewResolved<number>; score: McaPreviewResolved<number> };
 }
 
+type McaCardSource = Omit<McaPreviewIndexRecord, 'detailPath'>;
+
 const labels: Record<McaPreviewField, string> = {
   name: '机构名称', facilityTypeCode: '设施类型原码', facilityTypeLabel: '设施类型原标签',
   areaCode: '地区代码', regionLabel: '地区名称', regionPath: '地区层级', address: '详细地址',
@@ -103,13 +113,13 @@ const channelLabels: Record<string, string> = {
 
 function numberText(value: number): string { return value.toLocaleString('zh-CN'); }
 
-function bedText(record: McaPreviewIndexRecord, field: 'listedBeds' | 'nursingBeds'): string {
+function bedText(record: McaCardSource, field: 'listedBeds' | 'nursingBeds'): string {
   if (record.conflictFields.includes(field)) return '观察值冲突';
   const value = record[field];
   return value === null ? '未提供' : numberText(value) + ' 个';
 }
 
-function fee(record: McaPreviewIndexRecord): { text: string | null; warning: boolean } {
+function fee(record: McaCardSource): { text: string | null; warning: boolean } {
   if (record.conflictFields.includes('listedMonthlyFeeMin') || record.conflictFields.includes('listedMonthlyFeeMax')) {
     return { text: '费用观察值冲突，见原始证据', warning: false };
   }
@@ -122,7 +132,7 @@ function fee(record: McaPreviewIndexRecord): { text: string | null; warning: boo
   return { text: '¥' + numberText(lower) + '–' + numberText(upper) + ' 元/月（平台列示）', warning };
 }
 
-function evaluation(record: McaPreviewIndexRecord): string | null {
+function evaluation(record: McaCardSource): string | null {
   if (record.conflictFields.includes('evaluationCount') || record.conflictFields.includes('overallEvaluation')) {
     return '平台评价观察值冲突，见原始证据';
   }
@@ -143,6 +153,48 @@ function textValue(value: McaJsonValue | undefined): string | null {
 
 function numericValue(value: McaJsonValue | undefined): number | null {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null;
+}
+
+function listResolved<T>(observations: readonly McaPreviewObservation[], key: string,
+  kind: 'string' | 'number'): McaPreviewResolved<T> {
+  const values: T[] = [];
+  for (const observation of observations) {
+    const raw = observation.sourceFields[key];
+    if (raw === null || raw === undefined || (typeof raw === 'string' && !raw.trim())) continue;
+    if (kind === 'string' && typeof raw !== 'string' ||
+      kind === 'number' && (typeof raw !== 'number' || !Number.isFinite(raw) || raw < 0)) {
+      throw new Error('MCA列表字段类型无效：' + key);
+    }
+    values.push(raw as T);
+  }
+  if (values.length === 0) return { state: 'missing', value: null, observationCount: 0 };
+  if (new Set(values.map(value => JSON.stringify(value))).size > 1) {
+    return { state: 'conflict', value: null, observationCount: values.length };
+  }
+  return { state: 'observed', value: values[0], observationCount: values.length };
+}
+
+/** 只投影列表原件已观察到的五个字段，详情原件不反填列表。 */
+export function mapMcaPreviewListExtras(detail: McaPreviewDetail): McaPreviewListExtrasDto {
+  const list = detail.listObservations;
+  return {
+    listedContactPhone: listResolved<string>(list, 'ahae0012', 'string'),
+    serviceCategoryLabel: listResolved<string>(list, 'ahae0633Name', 'string'),
+    subsidyCode: listResolved<string>(list, 'ahae0635', 'string'),
+    dayCareBeds: listResolved<number>(list, 'ahae0019', 'number'),
+    fullCareBeds: listResolved<number>(list, 'ahae2343', 'number'),
+  };
+}
+
+function detailWithListFallback<T>(detailValue: McaPreviewResolved<T>,
+  listValue: McaPreviewResolved<T>): McaPreviewResolved<T> {
+  if (detailValue.state === 'conflict' || listValue.state !== 'observed') return detailValue;
+  if (detailValue.state === 'missing') return listValue;
+  if (JSON.stringify(detailValue.value) !== JSON.stringify(listValue.value)) {
+    return { state: 'conflict', value: null,
+      observationCount: detailValue.observationCount + listValue.observationCount };
+  }
+  return detailValue;
 }
 
 function resolved<T>(observations: readonly McaPreviewDetailObservation[], channel: 'orgBaseDetail' | 'yangLaoOrgDetail',
@@ -259,8 +311,10 @@ function chargeItems(observations: readonly McaPreviewDetailObservation[]): McaP
 
 function mapPlatformDetail(record: McaPreviewIndexRecord, detail: McaPreviewDetail): McaPreviewPlatformDetailDto {
   const observations = detail.detailObservations;
+  const listExtras = mapMcaPreviewListExtras(detail);
   const fieldConflict = (key: McaPreviewField) => record.conflictFields.includes(key) || detail.conflictFields.includes(key);
-  const indexed = <T>(key: McaPreviewField, value: T | null) => indexField(value, fieldConflict(key), record.listObservationCount);
+  const indexObservationCount = record.listObservationCount || record.detailObservationCount;
+  const indexed = <T>(key: McaPreviewField, value: T | null) => indexField(value, fieldConflict(key), indexObservationCount);
   const monthlyRange = feeRange(observations, '04');
   const monthlyConflict = record.conflictFields.includes('listedMonthlyFeeMin') || record.conflictFields.includes('listedMonthlyFeeMax') ||
     detail.conflictFields.includes('listedMonthlyFeeMin') || detail.conflictFields.includes('listedMonthlyFeeMax');
@@ -268,9 +322,9 @@ function mapPlatformDetail(record: McaPreviewIndexRecord, detail: McaPreviewDeta
     ? [record.listedMonthlyFeeMin, record.listedMonthlyFeeMax] as [number, number] : null;
   const mergedMonthlyRange: McaPreviewResolved<[number, number]> = monthlyConflict ||
     (monthlyRange.state === 'observed' && indexRange !== null && JSON.stringify(monthlyRange.value) !== JSON.stringify(indexRange))
-    ? { state: 'conflict', value: null, observationCount: monthlyRange.observationCount + record.listObservationCount }
+    ? { state: 'conflict', value: null, observationCount: monthlyRange.observationCount + indexObservationCount }
     : monthlyRange.state === 'missing' && indexRange !== null
-      ? { state: 'observed', value: indexRange, observationCount: record.listObservationCount } : monthlyRange;
+      ? { state: 'observed', value: indexRange, observationCount: indexObservationCount } : monthlyRange;
   const feeSummary = ([
     ['04', '月总费用'], ['02', '床位费用'], ['01', '护理费用'], ['03', '膳食费用'],
   ] as const).map(([code, label]) => ({ code, label,
@@ -292,14 +346,14 @@ function mapPlatformDetail(record: McaPreviewIndexRecord, detail: McaPreviewDeta
       functionPositioning: indexed('functionPositioningLabel', record.functionPositioningLabel),
       region: indexField(record.regionPath ?? record.regionLabel,
         fieldConflict('regionPath') || (record.regionPath === null && fieldConflict('regionLabel')),
-        record.listObservationCount),
+        indexObservationCount),
       address: indexed('address', record.address),
     },
     tags: structuredTags(indexedTags(baseString(observations, 'tag'), record.platformTagsRaw,
-      fieldConflict('platformTagsRaw'), record.listObservationCount)),
-    subsidyCode: baseString(observations, 'ahae0635'),
+      fieldConflict('platformTagsRaw'), indexObservationCount)),
+    subsidyCode: detailWithListFallback(baseString(observations, 'ahae0635'), listExtras.subsidyCode),
     contactName: baseString(observations, 'ahae2572'),
-    contactPhone: baseString(observations, 'ahae2573'),
+    contactPhone: detailWithListFallback(baseString(observations, 'ahae2573'), listExtras.listedContactPhone),
     pointRaw: nestedString(observations, 'orgBaseInfo', 'point'),
     photoCount: photoCount(observations),
     areaSqm,
@@ -313,11 +367,11 @@ function mapPlatformDetail(record: McaPreviewIndexRecord, detail: McaPreviewDeta
     },
     beds: {
       total: indexedNumber(careNumber(observations, 'ahae2347'), record.listedBeds,
-        record.conflictFields.includes('listedBeds') || detail.conflictFields.includes('listedBeds'), record.listObservationCount),
-      dayCare: careNumber(observations, 'ahae0019'),
-      fullCare: careNumber(observations, 'ahae2343'),
+        record.conflictFields.includes('listedBeds') || detail.conflictFields.includes('listedBeds'), indexObservationCount),
+      dayCare: detailWithListFallback(careNumber(observations, 'ahae0019'), listExtras.dayCareBeds),
+      fullCare: detailWithListFallback(careNumber(observations, 'ahae2343'), listExtras.fullCareBeds),
       nursing: indexedNumber(careNumber(observations, 'ahae2323'), record.nursingBeds,
-        record.conflictFields.includes('nursingBeds') || detail.conflictFields.includes('nursingBeds'), record.listObservationCount),
+        record.conflictFields.includes('nursingBeds') || detail.conflictFields.includes('nursingBeds'), indexObservationCount),
     }, feeSummary, charges: chargeItems(observations),
     evaluation: { state: countConflict || scoreConflict ? 'conflict' : record.evaluationCount === null ? 'missing' : 'observed',
       text: countConflict || scoreConflict ? '平台评价观察值冲突，见原始证据' : evaluation(record) ?? '原平台未提供',
@@ -326,7 +380,7 @@ function mapPlatformDetail(record: McaPreviewIndexRecord, detail: McaPreviewDeta
 }
 
 /** Presentation values only; never parse unreviewed sourceFields in the browser. */
-export function mapMcaPreviewCard(record: McaPreviewIndexRecord): McaPreviewCardDto {
+export function mapMcaPreviewCard(record: McaCardSource): McaPreviewCardDto {
   const monthlyFee = fee(record);
   const conflicts = new Set(record.conflictFields);
   return {

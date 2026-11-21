@@ -17,9 +17,9 @@ function renderHeader(pathname: string): string {
   );
 }
 
-test('national platform institution detail keeps the service category active in the shared navigation', () => {
+test('national platform institution detail keeps the partial snapshot category active in the shared navigation', () => {
   const html = renderHeader('/quanguo/mca-preview/detail/');
   const desktop = html.match(/<nav aria-label="主导航"[\s\S]*?<\/nav>/)?.[0] ?? '';
-  assert.match(desktop, /<a\b(?=[^>]*aria-current="page")(?=[^>]*href="\/quanguo\/cankao")[^>]*>服务查询<\/a>/);
+  assert.match(desktop, /<a\b(?=[^>]*aria-current="page")(?=[^>]*href="\/quanguo\/pingtai")[^>]*>平台采集快照（部分）<\/a>/);
   assert.doesNotMatch(desktop, /<a\b(?=[^>]*aria-current="page")(?=[^>]*href="\/")[^>]*>首页<\/a>/);
 });

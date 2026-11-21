@@ -9,14 +9,15 @@ export const metadata = {
 };
 
 const hotLinks = [
-  { href: '/quanguo/cankao/', label: '机构资料查询' },
+  { href: '/quanguo/pingtai/', label: '民政部平台快照' },
+  { href: '/quanguo/cankao/', label: '企查查机构线索' },
   { href: '/quanguo/laiyuan/', label: '地方官方来源' },
   { href: '/quanguo/zhuti/', label: '登记主体候选' },
   { href: '/rules/', label: '收录范围与方法' },
 ] as const;
 
 const serviceCards = [
-  { title: '机构服务查询', description: '按省市查看机构来源线索', icon: '⌂', color: 'bg-[#E5F2FE] text-[#1777B9]', href: '/quanguo/cankao/', external: false },
+  { title: '民政部平台采集', description: '民政部平台部分采集快照，按地区查已观察记录', icon: '⌂', color: 'bg-[#E5F2FE] text-[#1777B9]', href: '/quanguo/pingtai/', external: false },
   { title: '喘息服务查询', description: '在民政部平台查看服务点', icon: '✳', color: 'bg-[#FFF2D5] text-[#D88916]', href: 'https://yanglao.mca.gov.cn/#/index/chuanXiServicesList', external: true },
   { title: '日托服务查询', description: '在民政部平台查看服务点', icon: '◷', color: 'bg-[#DCF5F1] text-[#159A8E]', href: 'https://yanglao.mca.gov.cn/#/index/riTuoServicesList', external: true },
   { title: '居家上门服务查询', description: '官网首页此入口尚未开放', icon: '⌂', color: 'bg-[#FFF0E5] text-[#E87919]', href: null, external: false },
@@ -47,14 +48,13 @@ export default function HomePage() {
         </g>
       </svg>
       <div className="container-site relative z-10 flex min-h-[400px] flex-col justify-end pb-14 pt-32 sm:min-h-[485px] sm:pb-28 sm:pt-36">
-        <h1 id="home-title" className="sr-only">全国养老机构来源资料查询</h1>
-        <form action={sitePath('/quanguo/cankao/')} method="get" role="search" aria-label="按地区查找养老机构线索" className="flex w-full max-w-[675px] flex-col overflow-hidden border border-[#E1C294] bg-white/95 shadow-[0_10px_24px_#61451f25] sm:min-h-[55px] sm:flex-row">
-          <label htmlFor="home-province" className="sr-only">所在省份</label>
-          <select id="home-province" name="province" defaultValue="" className="min-h-12 w-full min-w-0 border-0 border-b border-[#E8D8C5] bg-transparent px-4 text-[15px] text-ink outline-offset-[-3px] sm:w-[160px] sm:border-b-0 sm:border-r"><option value="">全部地区</option>{referenceManifest.provinces.map(province => <option key={province.slug} value={province.slug}>{province.name}</option>)}</select>
+        <h1 id="home-title" className="sr-only">民政部平台部分采集快照查询</h1>
+        <form action={sitePath('/quanguo/pingtai/')} method="get" role="search" aria-label="检索民政部平台部分采集快照" className="flex w-full max-w-[675px] flex-col overflow-hidden border border-[#E1C294] bg-white/95 shadow-[0_10px_24px_#61451f25] sm:min-h-[55px] sm:flex-row">
           <label htmlFor="home-keyword" className="sr-only">机构名称或地址</label>
           <input id="home-keyword" name="q" type="search" maxLength={80} placeholder="请输入机构名称或地址" className="min-h-12 min-w-0 flex-1 border-0 bg-transparent px-4 text-[15px] outline-offset-[-3px]" />
           <button type="submit" className="min-h-12 bg-[#F68A13] px-7 text-[16px] font-semibold text-white hover:bg-[#D77309]">搜索</button>
         </form>
+        <p className="mb-0 mt-2 max-w-[675px] text-[13px] leading-5 text-[#604A38]">民政部平台部分采集快照，不代表全国全量或当前在营；进入目录后可按省份、城市和设施类型筛选。</p>
       </div>
     </section>
 
@@ -81,8 +81,8 @@ export default function HomePage() {
 
     <section id="region-index" aria-labelledby="region-index-title" className="container-site mt-12 lg:mt-24">
       <div className="border border-[#E6D6C5] bg-[#FFFDF8] p-5 sm:p-7">
-        <div className="flex flex-wrap items-baseline justify-between gap-2"><h2 id="region-index-title" className="m-0 text-[19px] font-semibold">按省份进入机构来源线索</h2><span className="text-[12px] text-sub">地区索引 · 来源表记录</span></div>
-        <p className="mb-4 mt-2 text-[13px] leading-6 text-body">按省份查看来源表记录；记录不等于当前在营机构。</p>
+        <div className="flex flex-wrap items-baseline justify-between gap-2"><h2 id="region-index-title" className="m-0 text-[19px] font-semibold">按省份进入企查查来源表线索</h2><span className="text-[12px] text-sub">地区索引 · 来源表记录</span></div>
+        <p className="mb-4 mt-2 text-[13px] leading-6 text-body">按省份查看企查查来源表记录；记录不等于当前在营机构，也不自动关联民政部平台记录。</p>
         <div className="max-w-[760px]"><details className="border border-[#E4C9AA] bg-white"><summary className="min-h-11 cursor-pointer px-4 py-3 text-[14px] font-semibold text-[#9A472D]">按省份展开来源线索</summary>
           <ul className="m-0 grid max-h-[260px] list-none grid-cols-2 gap-x-3 gap-y-1 overflow-y-auto border-t border-[#E4C9AA] p-4 text-[14px] sm:grid-cols-4">{referenceManifest.provinces.map(province => <li key={province.slug}><Link href={'/quanguo/cankao/sheng/' + province.slug + '/'} className="inline-flex min-h-9 items-center text-[#9A472D] underline-offset-4 hover:underline">{province.name}</Link></li>)}</ul>
           </details></div>
@@ -90,7 +90,7 @@ export default function HomePage() {
     </section>
 
     <section id="home-entrances" aria-label="本站资料入口" className="container-site mt-7 grid gap-4 pb-10 sm:grid-cols-2 lg:grid-cols-4">
-      <Link href="/quanguo/cankao/" className="group flex min-h-[160px] flex-col justify-between overflow-hidden border border-[#C7DAE9] bg-[#E9F4FB] p-5 no-underline hover:border-[#4D91BB]"><span aria-hidden="true" className="text-[31px] text-[#367DB2]">⌂</span><span><strong className="block text-[20px] text-[#245E8C]">全国机构来源线索</strong><span className="mt-2 block text-[13px] text-[#466176]">按省市查询逐行记录 →</span></span></Link>
+      <Link href="/quanguo/cankao/" className="group flex min-h-[160px] flex-col justify-between overflow-hidden border border-[#C7DAE9] bg-[#E9F4FB] p-5 no-underline hover:border-[#4D91BB]"><span aria-hidden="true" className="text-[31px] text-[#367DB2]">⌂</span><span><strong className="block text-[20px] text-[#245E8C]">企查查机构线索</strong><span className="mt-2 block text-[13px] text-[#466176]">按省市查看来源表逐行记录 →</span></span></Link>
       <Link href="/quanguo/laiyuan/" className="group flex min-h-[160px] flex-col justify-between overflow-hidden border border-[#E9CCAC] bg-[#FFF0DD] p-5 no-underline hover:border-[#C98544]"><span aria-hidden="true" className="text-[31px] text-[#C4732C]">▤</span><span><strong className="block text-[20px] text-[#A4541D]">核对官方来源</strong><span className="mt-2 block text-[13px] text-[#71543D]">看原文与资料日期 →</span></span></Link>
       <Link href="/quanguo/zhuti/" className="group flex min-h-[160px] flex-col justify-between overflow-hidden border border-[#E1C5C4] bg-[#FBECEB] p-5 no-underline hover:border-[#C77E79]"><span aria-hidden="true" className="text-[31px] text-[#B9524A]">▣</span><span><strong className="block text-[20px] text-[#9D3835]">登记主体候选</strong><span className="mt-2 block text-[13px] text-[#755354]">核对企业登记快照 →</span></span></Link>
       <Link href="/rules/" className="group flex min-h-[160px] flex-col justify-between overflow-hidden border border-[#D8D0E4] bg-[#F3EFF9] p-5 no-underline hover:border-[#8873A2]"><span aria-hidden="true" className="text-[31px] text-[#806BA0]">◈</span><span><strong className="block text-[20px] text-[#675181]">来源与方法</strong><span className="mt-2 block text-[13px] text-[#655B6C]">了解收录与待核边界 →</span></span></Link>

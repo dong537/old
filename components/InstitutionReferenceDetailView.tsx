@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { SectionTitle } from '@/components/DirectoryUi';
 import { PublicInstitutionBottomNav, PublicInstitutionDetailSections, PublicInstitutionHero, PublicInstitutionSummary } from '@/components/PublicInstitutionDetailSections';
 import { mapReferenceInstitutionDetail } from '@/lib/institution-detail-dto';
+import { mcaPublicNameSearchHref } from '@/lib/mca-public-ui';
 import { loadReferenceCityLinks, loadReferenceLinksManifest, officialCandidateHref } from '@/lib/institution-reference-links';
 import { institutionRegistryCandidateHref, loadInstitutionRegistryCityLinks, loadInstitutionRegistryLinksManifest } from '@/lib/institution-registry-links';
 import {
@@ -55,6 +56,7 @@ export function InstitutionReferenceDetailContent({ manifest, record, officialCa
     <p className="mb-0 mt-3 text-body">本表没有已核实的机构联系电话、实时空床或预约入口。先看官方同名来源和登记主体候选，再向服务场所确认当前情况。</p>
     <div className="mt-4 flex flex-col gap-2 border-t border-brand-line pt-3 font-semibold">
       <a href={sitePath('#official')}>查看官方来源候选 →</a>
+      <a href={sitePath(mcaPublicNameSearchHref(record.name))}>在民政部平台部分采集快照按名称查找（候选，未核同一机构） →</a>
       <a href={sitePath('#registry')}>查看登记主体候选 →</a>
       <a href={sitePath('#sources')}>核对原始来源 →</a>
     </div>

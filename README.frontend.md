@@ -1,6 +1,6 @@
 # 前端接手指南
 
-> 更新：2026-11-19。给接手公开网站的前端开发者；数据采集、清洗和公开投影由后端／数据开发者负责。先读本页，再按需查 [设计契约](docs/superpowers/specs/2026-11-18-source-led-frontend-redesign.md) 和 [来源与发布说明](README.md)。
+> 更新：2026-11-21。给接手公开网站的前端开发者；数据采集、清洗和公开投影由后端／数据开发者负责。先读本页，再按需查 [设计契约](docs/superpowers/specs/2026-11-18-source-led-frontend-redesign.md) 和 [来源与发布说明](README.md)。
 
 ## 30 分钟启动
 
@@ -11,13 +11,15 @@ npm ci
 npm run dev
 ```
 
-打开 `http://127.0.0.1:3000/`。依次走：首页选省份和关键词 → 全国机构线索 → 打开详情 → 返回原筛选；再走广州官方名单的搜索、按区筛选和档案。`npm run dev` 会先从已提交的公开原料重建广州机构与服务 JSON。端口被占用时使用 Next 的 `--port` 参数，但不要同时运行 `next dev` 与 `next build`：二者共用 `.next/`，曾造成构建入口冲突。
+打开 `http://127.0.0.1:3000/`。依次走：首页按名称检索 → 民政部平台部分采集快照 → 已采详情 → 来源及返回筛选；再走广州官方名单。`npm run dev` 会先从已提交的公开原料重建广州机构与服务 JSON。端口被占用时使用 Next 的 `--port` 参数，但不要同时运行 `next dev` 与 `next build`：二者共用 `.next/`，曾造成构建入口冲突。
 
 ## 当前产品边界
 
 主站是 **Next.js 15 + React 19 + TypeScript + Tailwind CSS** 的只读静态目录，`next.config.mjs` 使用 `output: 'export'` 和尾斜杠。浏览器读取仓库的公开 JSON；生产页面没有实时后端 API、账户、预约、商家入驻或实时价格／空床。独立的 `prototype/` 是虚构数据演示，不是正式页面的视觉或业务权威。
 
-三类结果必须分清：全国机构**来源线索**、地方**官方来源观察记录**、企查查**登记主体候选**。它们不是同一份已核验机构名录，不能相加、自动合并或据同名推断在营关系。广州 235 家名单是独立的官方历史快照。备案床位不等于当前空床；预收费“是／否／未知”不是金额；未知也不等于 0。页面上的来源、资料期和原文出口是核心内容，不能被视觉改版移到难找的位置。
+四类结果必须分清：民政部平台**部分采集快照**、企查查**机构来源线索**、地方**官方来源观察记录**、企查查**登记主体候选**。它们不是同一份已核验机构名录，不能相加、自动合并或据同名推断在营关系。广州 235 家名单是独立的官方历史快照。备案床位不等于当前空床；预收费“是／否／未知”不是金额；未知也不等于 0。页面上的来源、资料期和原文出口是核心内容，不能被视觉改版移到难找的位置。
+
+新增独立公开路由 `/quanguo/pingtai/`：消费已提交的 public/data/mca-observed 白名单 JSON，仅是 3,726 个平台 ID 的部分采集快照；其中 131 条有详情。详情页按平台 ID 查找，不把同名的企查查来源表行自动认作同一家。私有原件和图片文件 ID 均不进入公开 JSON；下述本机私有预览仍独立。重新导出需在保管私有快照的机器运行 `npm run mca:observed:build`，然后运行 `npm run verify:release`。详细契约见 [接入方案](docs/research/mca-partial-public-integration-2026-11-21.md)。
 
 本机私有开发预览另有 `/quanguo/mca-preview/`：消费已封存的全国养老服务信息平台观察快照，按平台 ID 显示列表、可用详情、原字段与采集证据。它不并入上述公开目录，当前快照固定 `publishable=false`，不代表全国全量或当前在营。镜像更新后运行 `python scripts/build-mca-observed-catalog.py --mirror "镜像目录绝对路径"`，再用 `npm run dev:private` 在 loopback 开发服务器查看；私有快照仅在 `data/private/generated/mca-observed-catalog/`，不能复制到 `public/data/`。缺详情的记录只显示已取得的列表字段。
 
@@ -29,6 +31,7 @@ npm run dev
 | 搜索优先首页 | `app/page.tsx` |
 | 广州官方名单、档案、对比 | `app/guangzhou/`、`components/DirectoryView.tsx`、`DirectoryFilters.tsx`、`InstitutionList.tsx`、`ComparisonView.tsx`、`lib/search.ts` |
 | 全国机构线索 | `app/quanguo/cankao/`、`components/InstitutionReference*`、`lib/institution-reference-*` |
+| 民政部平台部分采集快照 | `app/quanguo/pingtai/`、`components/McaPublic*`、`lib/mca-public-*`、`scripts/build-mca-observed-export.ts` |
 | 全国官方来源 | `app/quanguo/laiyuan/`、`components/NationalOfficial*`、`lib/national-official-*` |
 | 全国平台已观察记录（仅本机） | `app/quanguo/mca-preview/`、`components/McaPreview*`、`lib/mca-preview-*`、`scripts/build-mca-observed-catalog.py` |
 | 登记主体候选 | `app/quanguo/zhuti/`、`app/guangdong/zhuti/`、`components/Qcc*`、`lib/qcc-*` |

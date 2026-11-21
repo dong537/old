@@ -47,6 +47,24 @@ test('列表 DTO 保留筛选原值，统一零床位、单边费用与评价文
   assert.equal('platformTagsRaw' in dto, false);
 });
 
+test('仅详情来源的索引回填保留实际观察次数', () => {
+  const row: McaPreviewIndexRecord = { ...base, listObservationCount: 0, detailObservationCount: 1,
+    hasDetail: true, regionPath: null, regionLabel: null };
+  const observed: McaPreviewDetail = { ...detail, listObservations: [], detailObservations: [{
+    source: { fetchedAtUtc: '2026-11-20T01:02:03Z' },
+    endpoints: {
+      orgBaseDetail: { source: {}, sourceFields: {} },
+      yangLaoOrgDetail: { source: {}, sourceFields: {} },
+    },
+  }] };
+  const mapped = mapMcaPreviewDetail(row, observed, 'observed-detail-only').platformDetail;
+  assert.deepEqual(mapped.identity.address, { state: 'observed', value: '测试路 1 号', observationCount: 1 });
+  assert.deepEqual(mapped.identity.region, { state: 'missing', value: null, observationCount: 0 });
+  assert.deepEqual(mapped.beds.total, { state: 'observed', value: 0, observationCount: 1 });
+  assert.deepEqual(mapped.feeSummary[0].range, { state: 'observed', value: [0, 3000], observationCount: 1 });
+  assert.deepEqual(mapped.tags, { state: 'observed', value: ['公办', '医养结合'], observationCount: 1 });
+});
+
 test('列表 DTO 不把来源冲突当缺失，也不拼接冲突价格', () => {
   const row: McaPreviewIndexRecord = { ...base, name: null, regionPath: null, regionLabel: null, address: null,
     listedMonthlyFeeMin: null, platformStarCode: null, evaluationCount: null,

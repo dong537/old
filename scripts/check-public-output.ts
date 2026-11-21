@@ -8,6 +8,7 @@ import { validateInstitutionReferenceLinks } from './check-qcc-institution-links
 import { validateInstitutionRegistryLinks } from './check-qcc-institution-registry-links-output';
 import { QCC_SOURCE_FIELD_NAMES } from '../lib/qcc-types';
 import { REFERENCE_SOURCE_FIELD_NAMES } from '../lib/institution-reference-types';
+import { validateMcaObservedOutput } from './check-mca-observed-output';
 
 // These belong only to the local ChaQiGO preview, even when QCC registration fields are published.
 const privateMarkers = [
@@ -604,6 +605,7 @@ export async function scanPublicOutput(directory: string, privateIdentifiers: st
   const institutionRegistryLinkFiles = new Map<string, string>();
   const guangdongRegistryFiles = new Map<string, string>();
   const officialReferenceFiles = new Map<string, string>();
+  const mcaObservedFiles = new Map<string, string>();
   let guangdongReferenceContent: string | undefined;
   const officialRawHashes = new Set(officialLock?.sources.map(source => source.sha256) ?? []);
   async function walk(folder: string): Promise<void> {
@@ -618,7 +620,8 @@ export async function scanPublicOutput(directory: string, privateIdentifiers: st
       if (relative.startsWith('data/raw/') || relative.startsWith('data/private/')) {
         throw new Error('公开输出含私有原件目录：' + relative);
       }
-      if (relative.startsWith('data/mca-') ||
+      if (relative.startsWith('data/.mca-observed-') ||
+        (relative.startsWith('data/mca-') && !relative.startsWith('data/mca-observed/')) ||
         (relative.startsWith('quanguo/mca-preview/') && !allowedMcaPreviewFiles.has(relative))) {
         throw new Error('公开输出含未经审核的MCA数据或详情页：' + relative);
       }
@@ -635,7 +638,9 @@ export async function scanPublicOutput(directory: string, privateIdentifiers: st
         throw new Error('公开输出发现MCA私有快照标记，停止发布：' + relative);
       }
       if (relative === 'data/guangdong-source-records.v1.json') guangdongReferenceContent = content;
-      if (relative.startsWith('data/qcc/')) {
+      if (relative.startsWith('data/mca-observed/')) {
+        mcaObservedFiles.set(relative, content);
+      } else if (relative.startsWith('data/qcc/')) {
         if (!qccPath.test(relative)) throw new Error('QCC投影目录含未经批准文件：' + relative);
         validateQccProjection(relative, content);
         guangdongRegistryFiles.set(relative, content);
@@ -690,6 +695,7 @@ export async function scanPublicOutput(directory: string, privateIdentifiers: st
     }
   }
   await walk(directory);
+  validateMcaObservedOutput(mcaObservedFiles);
   if (requireNational && !nationalManifest) throw new Error('QCC全国投影缺失manifest');
   if (nationalManifest || nationalIndexes.size || nationalChunks.size) {
     if (!nationalManifest) throw new Error('QCC全国投影缺失manifest');

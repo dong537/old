@@ -5,6 +5,8 @@
   "scripts": {
     "data:build": "tsx scripts/build-data.ts && tsx scripts/build-service-data.ts",
     "data:private": "tsx scripts/build-data.ts --private",
+    "mca:observed:candidate": "tsx scripts/build-mca-observed-export.ts --candidate-only",
+    "mca:observed:build": "tsx scripts/build-mca-observed-export.ts",
     "services:build": "tsx scripts/build-service-data.ts",
     "dev": "npm run dev:directory",
     "dev:prototype": "node scripts/prototype.mjs",

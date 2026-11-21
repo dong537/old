@@ -64,11 +64,32 @@ test('header search from a static province page keeps the province', () => {
   assert.equal(url.searchParams.has('page'), false);
 });
 
+test('platform snapshot search keeps its source and active filters', () => {
+  const href = headerSearchHref('/quanguo/pingtai/', ' 新词 ', '/quanguo/pingtai/BA7E6A754BB0A66AE053E897A6C0B507/',
+    '?province=北京市&city=北京市&type=养老机构&page=3');
+  const url = new URL(href, 'https://example.test');
+  assert.equal(url.pathname, '/quanguo/pingtai/');
+  assert.equal(url.searchParams.get('q'), '新词');
+  assert.equal(url.searchParams.get('province'), '北京市');
+  assert.equal(url.searchParams.get('city'), '北京市');
+  assert.equal(url.searchParams.get('type'), '养老机构');
+  assert.equal(url.searchParams.has('page'), false);
+});
+
+test('platform detail header identifies the partial snapshot and searches within it', () => {
+  const html = renderToStaticMarkup(withNavigation('/quanguo/pingtai/BA7E6A754BB0A66AE053E897A6C0B507/', 'q=颐养',
+    React.createElement(SiteHeader, { publishedAt: catalog.source.publishedAt })));
+  assert.match(html, /民政部平台部分采集快照/);
+  assert.match(html, /<form\b[^>]*action="(?:\/eldercare)?\/quanguo\/pingtai\/?"/);
+  assert.match(html, /<form\b[^>]*aria-label="民政部平台采集快照搜索"/);
+  assert.match(html, /<input\b[^>]*id="site-q"[^>]*value="颐养"/);
+});
+
 test('site search preserves the institution reference area and offers its own entry', () => {
   const html = renderToStaticMarkup(withNavigation('/quanguo/cankao/', '',
     React.createElement(SiteHeader, { publishedAt: catalog.source.publishedAt })));
   assert.doesNotMatch(html, /<form\b/);
-  assert.match(html, /href="\/quanguo\/cankao"[^>]*>找养老机构<\/a>/);
+  assert.match(html, /href="\/quanguo\/cankao"[^>]*>企查查机构线索<\/a>/);
   const href = headerSearchHref('/quanguo/cankao/', ' 新词 ', '/quanguo/cankao/detail/',
     '?province=p-abc&city=c-def&id=qi-old-2&page=3');
   const url = new URL(href, 'https://example.test');
@@ -91,16 +112,17 @@ test('Guangzhou entry points to nationwide official records separately from cand
 
 test('home starts with nationwide search and separates source types', () => {
   const home = renderToStaticMarkup(React.createElement(HomePage));
-  const form = home.match(/<form\b[^>]*action="(?:\/eldercare)?\/quanguo\/cankao\/?"[^>]*>/)?.[0];
-  assert.ok(form, '首页应直接提供全国机构线索搜索');
-  assert.match(home, /<select\b[^>]*name="province"[^>]*>/);
-  assert.match(home, /<option value="" selected="">全部地区<\/option>/);
+  const form = home.match(/<form\b[^>]*action="(?:\/eldercare)?\/quanguo\/pingtai\/?"[^>]*>/)?.[0];
+  assert.ok(form, '首页应直接提供民政部平台部分采集快照搜索');
   assert.match(home, /<input\b[^>]*name="q"[^>]*>/);
+  assert.match(home, /进入目录后可按省份、城市和设施类型筛选/);
   assert.match(home, /href="(?:\/eldercare)?\/quanguo\/cankao\/?"/);
-  assert.match(home, /全国机构来源线索/);
+  assert.match(home, /企查查机构线索/);
   assert.match(home, /核对官方来源/);
   assert.match(home, /登记主体候选/);
   assert.doesNotMatch(home, /href="(?:\/eldercare)?\/guangzhou\/jigou\/?"/);
+  assert.match(home, /href="(?:\/eldercare)?\/quanguo\/pingtai\/?"/);
+  assert.match(home, /民政部平台部分采集快照/);
 });
 
 test('home follows the observed portal order while keeping unsupported services explicit', () => {
@@ -123,9 +145,10 @@ test('header offers real navigation without disabled visitor actions or duplicat
   const header = renderToStaticMarkup(withNavigation('/', '',
     React.createElement(SiteHeader, { publishedAt: catalog.source.publishedAt })));
   assert.match(header, /<summary[^>]*>菜单<\/summary>/);
-  assert.match(header, /href="(?:\/eldercare)?\/quanguo\/cankao\/?"[^>]*>找养老机构<\/a>/);
+  assert.match(header, /href="(?:\/eldercare)?\/quanguo\/cankao\/?"[^>]*>企查查机构线索<\/a>/);
   assert.match(header, /href="(?:\/eldercare)?\/quanguo\/laiyuan\/?"[^>]*>官方来源<\/a>/);
   assert.match(header, /href="(?:\/eldercare)?\/quanguo\/zhuti\/?"[^>]*>登记主体<\/a>/);
+  assert.match(header, /href="(?:\/eldercare)?\/quanguo\/pingtai\/?"[^>]*>平台采集快照（部分）<\/a>/);
   assert.doesNotMatch(header, /href="(?:\/eldercare)?\/guangzhou\/jigou\/?"/);
   assert.doesNotMatch(header, /<button[^>]*disabled/);
   assert.doesNotMatch(header, /<form\b/);
@@ -135,7 +158,7 @@ test('portal header exposes service categories without a map destination', () =>
   const header = renderToStaticMarkup(withNavigation('/', '',
     React.createElement(SiteHeader, { publishedAt: catalog.source.publishedAt })));
   const desktop = header.match(/<nav aria-label="主导航"[\s\S]*?<\/nav>/)?.[0] ?? '';
-  for (const label of ['首页', '政策资讯', '服务查询', '在线办理', '养老人才/服务', '安全教育', '养老服务消费补贴']) {
+  for (const label of ['首页', '政策资讯', '平台采集快照（部分）', '在线办理', '养老人才/服务', '安全教育', '养老服务消费补贴']) {
     assert.match(desktop, new RegExp(label), label);
   }
   assert.ok(desktop.includes('href="https://yanglao.mca.gov.cn/#/index/newLasterList"'));
@@ -143,7 +166,7 @@ test('portal header exposes service categories without a map destination', () =>
   assert.doesNotMatch(desktop, /养老地图|elderlyCareMap/);
   assert.ok(desktop.includes('href="https://yanglao.mca.gov.cn/#/index/nurseQuery"'));
   assert.ok(desktop.includes('href="https://yanglao.mca.gov.cn/#/index/fireSafetyPublicity"'));
-  assert.ok(desktop.includes('href="/quanguo/cankao"'));
+  assert.ok(desktop.includes('href="/quanguo/pingtai"'));
   assert.match(desktop, /target="_blank"/);
   assert.match(desktop, /外部/);
   assert.ok(header.includes('href="/quanguo/laiyuan"'));

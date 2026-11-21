@@ -2,11 +2,13 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import test from 'node:test';
 import { getCompanyPreview, getCompanyStatus, privatePreview } from '../lib/companies-public';
 import { scanPublicOutput } from '../scripts/check-public-output';
 import { QCC_SOURCE_FIELD_NAMES } from '../lib/qcc-types';
 import { REFERENCE_SOURCE_FIELD_NAMES } from '../lib/institution-reference-types';
+import { mcaPreviewFields } from '../lib/mca-preview-types';
 
 function qccContactFixture() {
   const dir = mkdtempSync(path.join(tmpdir(), 'eldercare-qcc-contact-'));
@@ -117,10 +119,88 @@ test('public scan blocks MCA raw snapshots and unreviewed detail pages', async (
     writeFileSync(path.join(mca, 'index.json'), '{}');
     await assert.rejects(scanPublicOutput(dir, []), /MCA数据/);
     rmSync(path.join(dir, 'data'), { recursive: true });
+    const stage = path.join(dir, 'data', '.mca-observed-stage-orphan');
+    mkdirSync(stage, { recursive: true });
+    writeFileSync(path.join(stage, 'index.v1.json'), '{}');
+    await assert.rejects(scanPublicOutput(dir, []), /MCA数据/);
+    rmSync(path.join(dir, 'data'), { recursive: true });
     const detail = path.join(dir, 'quanguo', 'mca-preview', 'sample-id');
     mkdirSync(detail, { recursive: true });
     writeFileSync(path.join(detail, 'index.html'), '<p>sample</p>');
     await assert.rejects(scanPublicOutput(dir, []), /MCA数据或详情页/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('public scan accepts only a complete partial MCA observation projection', async () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'eldercare-mca-projection-'));
+  const root = path.join(dir, 'data', 'mca-observed');
+  const details = path.join(root, 'details');
+  const mcaId = 'SYNTHETIC-MCA-1';
+  const snapshotId = 'observed-synthetic';
+  const detailPath = 'details/' + createHash('sha256').update(mcaId).digest('hex') + '.v1.json';
+  const missing = () => ({ state: 'missing', value: null, observationCount: 0 });
+  const manifest = {
+    schemaVersion: 1, scope: 'partial_observed_mca_institutions', snapshotId,
+    sourcePage: 'https://yanglao.mca.gov.cn/?#/index/institutionList',
+    snapshotCapturedAtUtc: '2026-11-18T00:00:00Z', generatedAtUtc: '2026-11-21T00:00:00Z',
+    recordCount: 1, listObservedCount: 1, withDetailCount: 1, detailOnlyCount: 0,
+    nationalComplete: false, currentStatusVerified: false,
+    sourceSnapshots: [{ lane: 'synthetic', sha256: 'a'.repeat(64), capturedAtUtc: '2026-11-18T00:00:00Z' }],
+  };
+  const index = { schemaVersion: 1, snapshotId, records: [{
+    mcaId, detailPath, name: '测试养老机构', address: '测试路 1 号', areaCode: '110000',
+    conflictFields: [], detailObservationCount: 1, evaluationCount: 0,
+    facilityTypeCode: '3', facilityTypeLabel: '养老机构', functionPositioningLabel: null,
+    hasDetail: true, listObservationCount: 1, listedBeds: 55, listedMonthlyFeeMax: 15000,
+    listedMonthlyFeeMin: 8000, nursingBeds: 55, overallEvaluation: null,
+    platformStarCode: '02', platformTagsRaw: null, regionLabel: '北京市', regionPath: '北京市',
+    listedContactPhone: missing(), serviceCategoryLabel: missing(), subsidyCode: missing(),
+    dayCareBeds: missing(), fullCareBeds: missing(),
+    listObservedAtUtc: { earliest: '2026-11-18T00:00:00Z', latest: '2026-11-18T00:00:00Z' },
+  }] };
+  const detail = { schemaVersion: 1, snapshotId, mcaId,
+    sourcePage: 'https://yanglao.mca.gov.cn/?#/index/orgServicesDetail?axbe0001=SYNTHETIC-MCA-1&parentRoute=institutionList&tagValue=3',
+    detailObservedAtUtc: { earliest: '2026-11-18T00:00:00Z', latest: '2026-11-18T00:00:00Z' },
+    facts: mcaPreviewFields.map(key => ({ key, label: key, text: '未提供', state: 'missing', source: null, warning: null })),
+    conflictLabels: [],
+    platformDetail: {
+      identity: { facilityType: missing(), starCode: missing(), functionPositioning: missing(), region: missing(), address: missing() },
+      tags: missing(), subsidyCode: missing(), contactName: missing(), contactPhone: missing(), pointRaw: missing(),
+      photoCount: missing(), areaSqm: missing(), introduction: missing(),
+      service: { content: missing(), team: missing(), hours: missing(), scope: missing(), explanation: missing() },
+      beds: { total: missing(), dayCare: missing(), fullCare: missing(), nursing: missing() },
+      feeSummary: ['04', '02', '01', '03'].map(code => ({ code, label: code, range: missing(), description: missing() })),
+      charges: missing(), evaluation: { state: 'missing', text: '未提供', count: missing(), score: missing() },
+    },
+  };
+  try {
+    mkdirSync(details, { recursive: true });
+    const write = () => {
+      writeFileSync(path.join(root, 'manifest.v1.json'), JSON.stringify(manifest));
+      writeFileSync(path.join(root, 'index.v1.json'), JSON.stringify(index));
+      writeFileSync(path.join(root, detailPath), JSON.stringify(detail));
+    };
+    write();
+    assert.equal((await scanPublicOutput(dir)).filesScanned, 3);
+    index.records[0].listObservedAtUtc = null as unknown as typeof index.records[0]['listObservedAtUtc'];
+    write();
+    await assert.rejects(scanPublicOutput(dir), /MCA.*采集时间/);
+    index.records[0].listObservedAtUtc = { earliest: '2026-11-18T00:00:00Z', latest: '2026-11-18T00:00:00Z' };
+    detail.detailObservedAtUtc = null as unknown as typeof detail.detailObservedAtUtc;
+    write();
+    await assert.rejects(scanPublicOutput(dir), /MCA.*采集时间/);
+    detail.detailObservedAtUtc = { earliest: '2026-11-18T00:00:00Z', latest: '2026-11-18T00:00:00Z' };
+    (detail.platformDetail as Record<string, unknown>).rawResponse = { token: 'secret' };
+    write();
+    await assert.rejects(scanPublicOutput(dir), /MCA.*字段|MCA.*原件|MCA.*结构/);
+    delete (detail.platformDetail as Record<string, unknown>).rawResponse;
+    index.records[0].detailPath = 'details/' + '0'.repeat(64) + '.v1.json';
+    write();
+    await assert.rejects(scanPublicOutput(dir), /MCA.*路径|MCA.*详情/);
+    index.records[0].detailPath = detailPath;
+    detail.sourcePage = 'https://yanglao.mca.gov.cn/?#/index/orgServicesDetail?axbe0001=WRONG&parentRoute=institutionList&tagValue=3';
+    write();
+    await assert.rejects(scanPublicOutput(dir), /MCA.*身份|MCA.*来源/);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
