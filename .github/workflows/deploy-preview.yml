@@ -60,7 +60,7 @@ jobs:
     needs: build
     if: inputs.deploy == true
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
     environment:
       name: tencent-preview
       url: https://124.223.86.157/eldercare/
@@ -110,11 +110,15 @@ jobs:
           chmod 600 "$HOME/.ssh/config"
       - name: Upload and switch static release
         id: switch
+        timeout-minutes: 35
         run: |
           set -euo pipefail
           remote_dir="eldercare-actions/$RELEASE_KEY"
           ssh eldercare-target "mkdir -p $remote_dir"
-          scp eldercare.tar.gz eldercare.tar.gz.sha256 deploy/release-eldercare.sh "eldercare-target:$remote_dir/"
+          scp eldercare.tar.gz.sha256 deploy/release-eldercare.sh "eldercare-target:$remote_dir/"
+          split -b 8m -d -a 3 eldercare.tar.gz eldercare.part.
+          printf '%s\0' eldercare.part.* | xargs -0 -P 8 -I '{}' scp -q '{}' "eldercare-target:$remote_dir/"
+          ssh eldercare-target "cd $remote_dir && cat eldercare.part.* > eldercare.tar.gz && sha256sum -c eldercare.tar.gz.sha256 && rm -f eldercare.part.*"
           ssh eldercare-target "bash $remote_dir/release-eldercare.sh deploy $RELEASE_KEY $GITHUB_SHA $remote_dir"
       - name: Check the public release marker and homepage
         run: |
@@ -131,3 +135,7 @@ jobs:
       - name: Restore previous release after failed smoke check
         if: failure() && (steps.switch.outcome == 'success' || steps.switch.outcome == 'failure')
         run: ssh eldercare-target "bash eldercare-actions/$RELEASE_KEY/release-eldercare.sh rollback $RELEASE_KEY $GITHUB_SHA"
+      - name: Remove temporary upload files
+        if: always() && steps.switch.outcome != 'skipped'
+        continue-on-error: true
+        run: ssh eldercare-target "rm -rf -- eldercare-actions/$RELEASE_KEY"

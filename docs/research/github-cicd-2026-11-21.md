@@ -27,6 +27,14 @@ main → Actions checkout → npm ci → verify:release → out/ + release.txt �
 - 真正远端发布前，还须在 GitHub Environment 配置专用 SSH 账号、私钥、可信 known_hosts，确认 SSH 端口连通，并在 GitHub 设置需要的审批人。没有这些条件时，CD 是可手动触发的发布流程，但不能声称已完成线上部署。
 - Actions 从 Git 中构建，不运行依赖本机私有原件的 verify:local-release；数据版本升级仍需独立复核后提交公开快照。
 
+## 2026-11-21 部署账号与传输实测
+
+- SSH 端口 22 可达；为预览站新建专用部署账号，没有复用管理员登录密钥。
+- 部署账号的写权限限于养老站发布目录；旧 current 版本不变。专用公钥以 restrict 选项安装，本机严格主机校验、登录和目录写权限测试通过。
+- GitHub tencent-preview Environment 设置端口 22、账号 eldercare-deploy，并加密保存专用私钥及此前可信、经实际 SSH 握手匹配的 known_hosts 条目。仓库与日志不含私钥正文。
+- 第一次 deploy=true 运行在构建成功后发现 GitHub Runner 经单路 SCP 向腾讯云传输约 6 MiB 耗时数分钟；在版本切换前取消，核对 current 仍是 national-20261118-e2c2dd9e，仅删除本次不完整上传目录。远端直接拉取同一 Actions artifact 的小样本超过 105 秒仍未完成；本机到服务器 8 MiB 的 SCP 与 SSH 流传输均约 2 秒，故瓶颈集中在 GitHub 与服务器跨境路径。后续工作流改为 8 MiB 分片、最多 8 路并发传输，远端重组并核对归档 SHA-256 后才切换；正式再运行结果另记。
+- 上传步骤单独限时 35 分钟，给健康检查与回滚预留作业时间；成功或失败后清理本次运行的远端临时上传目录。清理失败会在 Actions 中显示，但不抹去发布与健康检查的结果。
+
 ## GitHub 与服务器配置步骤
 
 1. 在仓库 Settings → Environments 建立 tencent-preview，按团队需要设置 Required reviewers；手动触发本身已阻止普通推送自动部署。
