@@ -111,7 +111,7 @@ test('static province page renders source fields, city links, and the requested 
   assert.match(html, /资料时点未知，不代表全国全量或当前在营/);
   assert.match(html, /甲养老院/);
   assert.match(html, /原表地址字段（未核实）：暂无可公开地址/);
-  assert.match(html, /原表床位数 0 张/);
+  assert.match(html, /原表床位数[\s\S]{0,80}?0 张/);
   assert.match(html, /c-one/);
   assert.match(html, /查看线索与来源/);
 });

@@ -1,4 +1,4 @@
-import { PageTitle } from '@/components/DirectoryUi';
+import { DirectoryPager, PageTitle, RecordFacts } from '@/components/DirectoryUi';
 import { referenceListHref } from '@/lib/institution-reference-search';
 import { referenceProvincePageHref, referenceProvinceRecordHref } from '@/lib/institution-reference-static';
 import type { ReferenceProvincePageData } from '@/lib/institution-reference-static';
@@ -49,9 +49,13 @@ export function InstitutionReferenceProvincePage({ data }: { data: ReferenceProv
               </div>
               <p className="m-0 break-words text-[14px] text-body">地区：{record.region}</p>
               <p className="m-0 break-words text-[14px] text-body">原表地址字段（未核实）：{record.address ?? '暂无可公开地址'}</p>
-              <div className="grid gap-x-6 gap-y-2 border-t border-hair pt-3 text-[14px] text-body sm:grid-cols-2"><p className="m-0">原表床位数 {record.beds.toLocaleString('zh-CN')} 张</p><p className="m-0">护理型床位：本来源未提供</p><p className="m-0">月费用：本来源未提供</p><p className="m-0">机构星级：本来源未提供</p></div>
-            </div>
-            <footer aria-label="来源与核对" className="record-evidence">
+              <RecordFacts items={[
+                { label: '原表床位数', value: record.beds.toLocaleString('zh-CN') + ' 张' },
+                { label: '护理型床位', value: null },
+                { label: '月费用', value: null },
+                { label: '机构星级', value: null },
+              ]} />
+            </div>            <footer aria-label="来源与核对" className="record-evidence">
               <span className="min-w-0 break-words">{manifest.source.title} · 工作表第 {record.sourceRow.toLocaleString('zh-CN')} 行 · 资料时点未知</span>
               <a href={href} className="inline-flex min-h-11 items-center font-semibold">查看线索与来源 →</a>
             </footer>
@@ -59,11 +63,7 @@ export function InstitutionReferenceProvincePage({ data }: { data: ReferenceProv
         </li>;
       })}
     </ul>
-    <nav aria-label="省级来源线索分页" className="flex flex-wrap items-center justify-center gap-3">
-      {page > 1 && <a href={referenceProvincePageHref(province.slug, page - 1)} className="btn-outline px-3 text-sm" rel="prev">上一页</a>}
-      <span className="text-[13px] text-sub">第 {page} / {pageCount} 页 · 每页20条</span>
-      {page < pageCount && <a href={referenceProvincePageHref(province.slug, page + 1)} className="btn-outline px-3 text-sm" rel="next">下一页</a>}
-    </nav>
+    <DirectoryPager label="省级来源线索分页" page={page} pageCount={pageCount} hint="每页 20 条" hrefFor={next => referenceProvincePageHref(province.slug, next)} />
     <div className="card p-4 text-[13px] text-sub">
       本站于 <time dateTime={manifest.receivedAt}>{manifest.receivedAt}</time> 接收该文件；接收日不是资料截至日。<a href={sitePath('/data/qcc-institutions/manifest.v1.json')} className="underlink ml-2">查看公开快照清单</a>
     </div>

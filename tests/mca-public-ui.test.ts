@@ -7,6 +7,7 @@ import { McaPublicDirectoryContent } from '../components/McaPublicDirectoryView'
 import { McaPublicDetailView } from '../components/McaPublicDetailView';
 import { mapMcaPreviewDetail } from '../lib/mca-preview-dto';
 import { mcaOfficialDetailHref } from '../lib/mca-preview-ui';
+import { mcaPublicReturnHref } from '../lib/mca-public-ui';
 import type { McaPreviewDetail, McaPreviewIndexRecord } from '../lib/mca-preview-types';
 import type { McaPublicDetailRecord, McaPublicIndexRecord, McaPublicManifest } from '../lib/mca-public-types';
 
@@ -117,7 +118,7 @@ test('公开详情显示已采字段、零值、来源时间，隐藏内部原�
     assert.ok(html.includes(value), value);
   }
   assert.match(html, /日托床位[^<]*<\/dt>[^<]*<dd[^>]*>0 个/);
-  assert.match(html, /图片记录 1 项/);
+  assert.doesNotMatch(html, /图片记录|图片文件名|机构图片记录/);
   assert.match(html, /平台列表补充字段/);
   assert.match(html, /平台列表服务类别/);
   assert.match(html, /平台列表联系电话原值/);
@@ -143,4 +144,20 @@ test('仅详情观察不伪造平台列表字段或列表采集时间', () => {
   }));
   assert.match(html, /该机构详情采集时间/);
   assert.doesNotMatch(html, /平台列表补充字段|该机构列表采集时间/);
+});
+
+test('detail return context preserves only a safe nationwide list filter', () => {
+  assert.equal(mcaPublicReturnHref('/quanguo/pingtai/?province=%E5%8C%97%E4%BA%AC%E5%B8%82&q=%E5%85%BB%E8%80%81&page=2'),
+    '/quanguo/pingtai/?province=%E5%8C%97%E4%BA%AC%E5%B8%82&q=%E5%85%BB%E8%80%81&page=2');
+  assert.equal(mcaPublicReturnHref('https://outside.example/'), '/quanguo/pingtai/');
+  assert.equal(mcaPublicReturnHref('/guangzhou/jigou/'), '/quanguo/pingtai/');
+  assert.equal(mcaPublicReturnHref('/quanguo/pingtai/?page=0'), '/quanguo/pingtai/');
+});
+
+test('filtered directory links carry their return context into detail', () => {
+  const html = renderToStaticMarkup(React.createElement(McaPublicDirectoryContent, {
+    records: [record], manifest: { ...manifest, recordCount: 1, listObservedCount: 1, withDetailCount: 1 },
+    params: new URLSearchParams({ q: '北京' }),
+  }));
+  assert.ok(html.includes('from=%2Fquanguo%2Fpingtai%2F%3Fq%3D'), '详情链接应保留筛选来源');
 });

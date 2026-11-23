@@ -9,6 +9,7 @@ import {
 import type { ReferenceSearchParams } from '@/lib/institution-reference-search';
 import type { ReferenceIndex, ReferenceManifest } from '@/lib/institution-reference-types';
 import { sitePath } from '@/lib/site-path';
+import { DirectoryPager, ListSkeleton, RecordFacts } from './DirectoryUi';
 
 type LoadState =
   | { status: 'loading' }
@@ -75,12 +76,12 @@ export function InstitutionReferenceDirectoryContent({ manifest, index, province
           <div className="flex flex-col gap-3 px-5 py-4 sm:py-5">
             <div className="flex flex-wrap items-start justify-between gap-2"><h3 className="m-0 min-w-0 break-words text-[18px] font-semibold leading-snug"><a href={href} className="text-ink no-underline hover:text-brand">{record.name}</a></h3><span className="tag shrink-0">企查查来源线索</span></div>
             <div className="grid gap-2 text-[14px] text-body"><p className="m-0 break-words">地区：{record.region}</p><p className="m-0 break-words">原表地址字段（未核实）：{record.address ?? '暂无可公开地址'}</p></div>
-            <div className="grid gap-x-6 gap-y-2 border-t border-hair pt-3 text-[14px] text-body sm:grid-cols-2">
-              <p className="m-0">原表床位数 {record.beds.toLocaleString('zh-CN')} 张</p>
-              <p className="m-0">护理型床位：本来源未提供</p>
-              <p className="m-0">月费用：本来源未提供</p>
-              <p className="m-0">机构星级：本来源未提供</p>
-            </div>
+            <RecordFacts items={[
+              { label: '原表床位数', value: record.beds.toLocaleString('zh-CN') + ' 张' },
+              { label: '护理型床位', value: null },
+              { label: '月费用', value: null },
+              { label: '机构星级', value: null },
+            ]} />
           </div>
           <footer aria-label="来源与核对" className="record-evidence">
             <span className="min-w-0 break-words">{manifest.source.title} · 工作表第 {record.sourceRow} 行 · 资料时点未知</span>
@@ -88,7 +89,7 @@ export function InstitutionReferenceDirectoryContent({ manifest, index, province
           </footer>
         </article></li>;
       })}</ul>}
-      {result.total > 0 && <nav aria-label="来源线索分页" className="flex flex-wrap items-center justify-center gap-3">{result.page > 1 && <a href={sitePath(referenceListHref({ ...result, page: result.page - 1 }))} className="btn-outline px-3 text-sm" rel="prev">上一页</a>}<span className="text-[13px] text-sub">第 {result.page} / {result.pageCount} 页 · 每页 20 条</span>{result.page < result.pageCount && <a href={sitePath(referenceListHref({ ...result, page: result.page + 1 }))} className="btn-outline px-3 text-sm" rel="next">下一页</a>}</nav>}
+      {result.total > 0 && <DirectoryPager label="来源线索分页" page={result.page} pageCount={result.pageCount} hint="每页 20 条" hrefFor={next => sitePath(referenceListHref({ ...result, page: next }))} />}
     </>}
     <details className="card p-4 text-[14px] text-body"><summary className="cursor-pointer font-semibold text-ink">查看来源定位，再核对官方资料</summary><p className="mb-0 mt-3">文件覆盖 {manifest.provinces.length} 个省级分组、{manifest.rowCount.toLocaleString('zh-CN')} 条来源行。重复名称及同一登记代码对应多处场所均保留为原始行，不计作独立在营机构数。原始 XLSX 未公开，所列工作表行号用于资料复核；打开详情可查看全部 11 个原列名和非联系字段原值，含联系方式的自由文本整格显示“[已遮蔽]”，私有原件保留不变。检索和地区分组仍使用整理后的字段。</p><p className="mb-0 mt-2">本站于 <time dateTime={manifest.receivedAt}>{manifest.receivedAt}</time> 接收此文件；接收日不是资料截至日。<a href={sitePath('/data/qcc-institutions/manifest.v1.json')} className="underlink ml-2">查看公开快照清单</a></p><a href={sitePath('/quanguo/laiyuan/')} className="mt-3 inline-block font-semibold">查看官方来源记录 →</a></details>
     </div>
@@ -116,7 +117,7 @@ export function InstitutionReferenceDirectoryView() {
     });
     return () => controller.abort();
   }, [locationKey, attempt]);
-  if (state.status === 'loading' || (state.status === 'ready' && state.locationKey !== locationKey)) return <div className="notice" role="status">正在加载来源线索…</div>;
+  if (state.status === 'loading' || (state.status === 'ready' && state.locationKey !== locationKey)) return <ListSkeleton label="正在加载来源线索…" />;
   if (state.status === 'error') return <div className="notice" role="alert"><p className="m-0">{state.message}</p><button type="button" className="btn-outline mt-3" onClick={() => setAttempt(value => value + 1)}>重试读取</button><a href={sitePath('/quanguo/cankao/')} className="underlink ml-4">返回地区选择</a></div>;
   return <InstitutionReferenceDirectoryContent key={locationKey} manifest={state.manifest} index={state.index} provinceIndexes={state.provinceIndexes} query={query} />;
 }

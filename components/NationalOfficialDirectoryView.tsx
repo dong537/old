@@ -10,6 +10,7 @@ import { guangdongOfficialCities, guangdongOfficialListHref, loadGuangdongSource
 import { searchProvinceRecords } from '@/lib/province-search';
 import type { ProvinceCatalog } from '@/lib/province-types';
 import { sitePath } from '@/lib/site-path';
+import { DirectoryPager, ListSkeleton, RecordFacts } from './DirectoryUi';
 
 type LoadState =
   | { status: 'loading' }
@@ -64,7 +65,12 @@ function GuangdongOfficialDirectoryContent({ catalog, manifest, query }: { catal
       return <li key={record.id} className="min-w-0"><article className="card flex flex-col gap-3 p-5">
         <h2 className="m-0 break-words text-[17px] font-semibold leading-snug"><a href={sitePath(detailHref)} className="text-ink no-underline hover:text-brand">{record.name}</a></h2>
         <p className="m-0 text-[14px] text-body">地区：{record.city}</p>
-        <div className="grid gap-x-6 gap-y-2 border-t border-hair pt-3 text-[14px] text-body sm:grid-cols-2"><p className="m-0">机构床位：本来源未提供</p><p className="m-0">护理型床位：本来源未提供</p><p className="m-0">月费用：本来源未提供</p><p className="m-0">机构星级：本来源未提供</p></div>
+        <RecordFacts items={[
+          { label: '机构床位', value: null },
+          { label: '护理型床位', value: null },
+          { label: '月费用', value: null },
+          { label: '机构星级', value: null },
+        ]} />
         {record.sourceStatusNote && <p className="m-0 break-words text-[13px] text-caution">原文状态提示：{record.sourceStatusNote}</p>}
         <footer aria-label="来源与核对" className="mt-1 flex flex-wrap items-center justify-between gap-2 border-t border-hair pt-3 text-[13px]">
           <span className="break-words text-sub">广东官方来源行 · {record.evidenceType} · 发布于 {record.sourcePublishedAt ? <time dateTime={record.sourcePublishedAt}>{record.sourcePublishedAt}</time> : '原文未说明'} · 资料期 {record.sourceAsOf ?? '原文未说明'}</span>
@@ -72,7 +78,7 @@ function GuangdongOfficialDirectoryContent({ catalog, manifest, query }: { catal
         </footer>
       </article></li>;
     })}</ul>}
-    {result.total > 0 && <nav aria-label="广东官方来源记录分页" className="flex flex-wrap items-center justify-center gap-3">{result.page > 1 && <a href={sitePath(guangdongOfficialListHref({ ...result, page: result.page - 1 }))} className="btn-outline px-3 text-sm" rel="prev">上一页</a>}<span className="text-[13px] text-sub">第 {result.page} / {result.pageCount} 页 · 每页 20 条</span>{result.page < result.pageCount && <a href={sitePath(guangdongOfficialListHref({ ...result, page: result.page + 1 }))} className="btn-outline px-3 text-sm" rel="next">下一页</a>}</nav>}
+    {result.total > 0 && <DirectoryPager label="广东官方来源记录分页" page={result.page} pageCount={result.pageCount} hint="每页 20 条" hrefFor={next => sitePath(guangdongOfficialListHref({ ...result, page: next }))} />}
     <p className="m-0 text-[13px] text-sub">本站于 <time dateTime={catalog.archivedAt}>{catalog.archivedAt}</time> 归档广东来源批次；归档日期不等于每条记录的资料期。<a href={sitePath('/data/guangdong-source-records.v1.json')} className="underlink ml-2">查看公开记录 JSON</a></p>
     </div>
     </div>
@@ -125,14 +131,20 @@ export function NationalOfficialDirectoryContent({ manifest, index, guangdongCat
         return <li key={record.id} className="min-w-0"><article className="card flex flex-col gap-3 p-5">
           <h2 className="m-0 break-words text-[17px] font-semibold leading-snug"><a href={href} className="text-ink no-underline hover:text-brand">{record.name}</a></h2>
           {officialNameCaution(record) && <p className="m-0 text-[13px] text-caution">{officialNameCaution(record)}</p>}
-          <div className="grid gap-x-6 gap-y-2 border-t border-hair pt-3 text-[14px] text-body sm:grid-cols-2"><p className="m-0 break-words sm:col-span-2">地址：{officialAddressLabel(record)}</p><p className="m-0">床位数 {record.beds === null ? '原表未提供' : record.beds.toLocaleString('zh-CN') + ' 张（来源快照）'}</p><p className="m-0">护理型床位：本来源未提供</p><p className="m-0">月费用：本来源未提供</p><p className="m-0">机构星级：本来源未提供</p></div>
+          <p className="m-0 break-words text-[14px] text-body">地址：{officialAddressLabel(record)}</p>
+          <RecordFacts items={[
+            { label: '床位数', value: record.beds === null ? null : record.beds.toLocaleString('zh-CN') + ' 张（来源快照）' },
+            { label: '护理型床位', value: null },
+            { label: '月费用', value: null },
+            { label: '机构星级', value: null },
+          ]} />
           <footer aria-label="来源与核对" className="mt-1 flex flex-wrap items-center justify-between gap-2 border-t border-hair pt-3 text-[13px]">
             <span className="break-words text-sub">官方来源行 · {source?.title ?? '来源未找到'} · 来源第 {record.rowNumber} 条 · 发布于 {source?.publishedAt ? <time dateTime={source.publishedAt}>{source.publishedAt}</time> : '原文未说明'} · 资料期 {source?.asOf ?? '原文未说明'}</span>
             <span className="flex flex-wrap gap-x-4 gap-y-2"><a href={href} className="inline-flex min-h-11 items-center font-semibold">查看记录与来源 →</a>{source && <a href={source.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center">打开官方原文核对 ↗</a>}</span>
           </footer>
         </article></li>;
       })}</ul>}
-      {result.total > 0 && <nav aria-label="官方来源记录分页" className="flex flex-wrap items-center justify-center gap-3">{result.page > 1 && <a href={sitePath(officialListHref({ ...result, page: result.page - 1 }))} className="btn-outline px-3 text-sm" rel="prev">上一页</a>}<span className="text-[13px] text-sub">第 {result.page} / {result.pageCount} 页 · 每页 20 条</span>{result.page < result.pageCount && <a href={sitePath(officialListHref({ ...result, page: result.page + 1 }))} className="btn-outline px-3 text-sm" rel="next">下一页</a>}</nav>}
+      {result.total > 0 && <DirectoryPager label="官方来源记录分页" page={result.page} pageCount={result.pageCount} hint="每页 20 条" hrefFor={next => sitePath(officialListHref({ ...result, page: next }))} />}
     </>}
     <p className="m-0 text-[13px] text-sub">按省份查看官方来源：当前跨省来源 {manifest.rowCount.toLocaleString('zh-CN')} 条；广东公开来源另有独立批次，不合并为机构总数。本地归档于 <time dateTime={manifest.archivedAt}>{manifest.archivedAt}</time>，不是逐条核验日期。<a href={sitePath('/data/national-official/manifest.v1.json')} className="underlink ml-2">查看来源清单 JSON</a></p>
     </div>
@@ -161,7 +173,7 @@ export function NationalOfficialDirectoryView() {
     });
     return () => controller.abort();
   }, [locationKey, attempt]);
-  if (state.status === 'loading' || (state.status === 'ready' && state.locationKey !== locationKey)) return <div className="notice" role="status">正在加载官方来源清单…</div>;
+  if (state.status === 'loading' || (state.status === 'ready' && state.locationKey !== locationKey)) return <ListSkeleton label="正在加载官方来源清单…" />;
   if (state.status === 'error') return <div className="notice" role="alert"><p className="m-0">{state.message}</p><button type="button" className="btn-outline mt-3" onClick={() => setAttempt(value => value + 1)}>重试读取</button><a href={sitePath('/quanguo/laiyuan/')} className="underlink ml-4">返回地区选择</a></div>;
   return <NationalOfficialDirectoryContent key={locationKey} manifest={state.manifest} index={state.index} guangdongCatalog={state.guangdongCatalog} query={query} />;
 }

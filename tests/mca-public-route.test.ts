@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { renderToStaticMarkup } from 'react-dom/server';
 import McaPublicDetailPage, { generateStaticParams } from '../app/quanguo/pingtai/[id]/page';
+import { mcaCatalogLoader } from '../lib/mca-catalog-static';
 import { mcaPublicLoader } from '../lib/mca-public-static';
 
 const sampledId = 'BA7E6A754BB0A66AE053E897A6C0B507';
@@ -14,7 +15,7 @@ test('公开投影区分 3726 个已观察 ID、3716 条列表记录及 10 条�
   assert.equal(manifest.withDetailCount, 131);
   assert.equal(manifest.detailOnlyCount, 10);
   assert.equal(index.records.length, manifest.recordCount);
-  assert.equal(generateStaticParams().length, manifest.withDetailCount);
+  assert.equal(generateStaticParams().length, mcaCatalogLoader.getManifest().detailCount);
   assert.ok(generateStaticParams().some(item => item.id === sampledId));
   assert.equal(index.records.filter(item => item.detailPath === null).length, 3595);
   assert.equal(index.records.filter(item => item.listObservationCount === 0 && item.detailPath !== null).length, 10);

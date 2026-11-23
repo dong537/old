@@ -137,39 +137,55 @@ test('home follows the observed portal order while keeping unsupported services 
   assert.match(home, /办理前核对资料日期/);
   assert.match(home, /按省份展开来源线索/);
   assert.doesNotMatch(home, /养老地图分类|elderlyCareMap|机构地图点位/);
-  assert.match(home, /官网办理事项与地区资格请到原站核对/);
+  assert.match(home, /本站整理办事事项的办理口径/);
   assert.doesNotMatch(home, /预约成功|当前空床|立即申领/);
 });
 
-test('header offers real navigation without disabled visitor actions or duplicate home search', () => {
+test('header keeps national source links available beside the prototype navigation', () => {
   const header = renderToStaticMarkup(withNavigation('/', '',
     React.createElement(SiteHeader, { publishedAt: catalog.source.publishedAt })));
-  assert.match(header, /<summary[^>]*>菜单<\/summary>/);
+  assert.match(header, /<summary[^>]*>资料<\/summary>/);
+  assert.match(header, /全国/);
   assert.match(header, /href="(?:\/eldercare)?\/quanguo\/cankao\/?"[^>]*>企查查机构线索<\/a>/);
   assert.match(header, /href="(?:\/eldercare)?\/quanguo\/laiyuan\/?"[^>]*>官方来源<\/a>/);
   assert.match(header, /href="(?:\/eldercare)?\/quanguo\/zhuti\/?"[^>]*>登记主体<\/a>/);
-  assert.match(header, /href="(?:\/eldercare)?\/quanguo\/pingtai\/?"[^>]*>平台采集快照（部分）<\/a>/);
+  assert.match(header, /href="(?:\/eldercare)?\/quanguo\/pingtai\/?"[^>]*>找养老机构<\/a>/);
   assert.doesNotMatch(header, /href="(?:\/eldercare)?\/guangzhou\/jigou\/?"/);
   assert.doesNotMatch(header, /<button[^>]*disabled/);
   assert.doesNotMatch(header, /<form\b/);
 });
 
-test('portal header exposes service categories without a map destination', () => {
+test('portal header opens all four national prototype categories in order', () => {
   const header = renderToStaticMarkup(withNavigation('/', '',
     React.createElement(SiteHeader, { publishedAt: catalog.source.publishedAt })));
   const desktop = header.match(/<nav aria-label="主导航"[\s\S]*?<\/nav>/)?.[0] ?? '';
-  for (const label of ['首页', '政策资讯', '平台采集快照（部分）', '在线办理', '养老人才/服务', '安全教育', '养老服务消费补贴']) {
-    assert.match(desktop, new RegExp(label), label);
+  const labels = ['首页', '找养老机构', '找上门服务', '长护险指南', '价格参考', '榜单', '方法论'];
+  for (const label of labels) {
+    assert.ok(desktop.includes(label), label);
   }
-  assert.ok(desktop.includes('href="https://yanglao.mca.gov.cn/#/index/newLasterList"'));
-  assert.ok(desktop.includes('href="https://yanglao.mca.gov.cn/#/index/personGuideList"'));
-  assert.doesNotMatch(desktop, /养老地图|elderlyCareMap/);
-  assert.ok(desktop.includes('href="https://yanglao.mca.gov.cn/#/index/nurseQuery"'));
-  assert.ok(desktop.includes('href="https://yanglao.mca.gov.cn/#/index/fireSafetyPublicity"'));
+  for (let index = 1; index < labels.length; index++) {
+    assert.ok(desktop.indexOf(labels[index - 1]) < desktop.indexOf(labels[index]), labels[index]);
+  }
   assert.ok(desktop.includes('href="/quanguo/pingtai"'));
-  assert.match(desktop, /target="_blank"/);
-  assert.match(desktop, /外部/);
+  assert.ok(desktop.includes('href="/rules"'));
+  for (const [route, label] of [['shangmen', '找上门服务'], ['changhuxian', '长护险指南'], ['jiage', '价格参考'], ['bangdan', '榜单']]) {
+    assert.match(desktop, new RegExp('href="/quanguo/' + route + '"[^>]*>' + label + '</a>'));
+  }
+  assert.doesNotMatch(desktop, /待开放|aria-disabled/);
+  assert.doesNotMatch(desktop, /养老地图|elderlyCareMap/);
+  assert.doesNotMatch(desktop, /href="\/guangzhou\//);
+  assert.doesNotMatch(desktop, /target="_blank"/);
+  assert.doesNotMatch(desktop, /yanglao\.mca\.gov\.cn/);
   assert.ok(header.includes('href="/quanguo/laiyuan"'));
   assert.ok(header.includes('href="/quanguo/zhuti"'));
+});
+
+test('the four opened pages keep their own category active without an unrelated header search', () => {
+  for (const [route, label] of [['shangmen', '找上门服务'], ['changhuxian', '长护险指南'], ['jiage', '价格参考'], ['bangdan', '榜单']]) {
+    const html = renderToStaticMarkup(withNavigation('/quanguo/' + route + '/', '',
+      React.createElement(SiteHeader, { publishedAt: catalog.source.publishedAt })));
+    assert.match(html, new RegExp('<a\\b(?=[^>]*aria-current="page")(?=[^>]*href="/quanguo/' + route + '")[^>]*>' + label + '</a>'));
+    assert.doesNotMatch(html, /<form\b/);
+  }
 });
 

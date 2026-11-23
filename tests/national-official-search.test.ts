@@ -186,7 +186,7 @@ test('official source pages expose scope, dated provenance and unknown values', 
     assert.match(landing, /选择省份和地区范围/);
     const selected = renderToStaticMarkup(React.createElement(NationalOfficialDirectoryContent, { manifest, index, query: { province: 'chongqing', city: 'chongqing', q: '乙' } }));
     assert.match(selected, /乙敬老院/);
-    assert.match(selected, /床位数.*原表未提供/);
+    assert.match(selected, /本来源未提供：床位数/);
     assert.ok(selected.includes('href="/eldercare/quanguo/laiyuan/detail/?province=chongqing'));
     const detail = renderToStaticMarkup(React.createElement(NationalOfficialDetailContent, { manifest, record: chunk.records[1], from: officialListHref({ province: 'chongqing', city: 'chongqing', q: '乙' }) }));
     assert.match(detail, /aria-label="本页目录"/);

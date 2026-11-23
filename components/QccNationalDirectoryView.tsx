@@ -9,6 +9,7 @@ import { findNationalCity, loadNationalCityIndex, loadNationalManifest, searchNa
 import { isQccStatusCaution, loadQccIndex, qccStatusCategory, searchQccRecords } from '@/lib/qcc-search';
 import { GUANGDONG_PROVINCE_SLUG, guangdongCityOptions, unifiedQccListHref } from '@/lib/qcc-unified-search';
 import { sitePath } from '@/lib/site-path';
+import { DirectoryPager, ListSkeleton } from './DirectoryUi';
 
 type LoadState =
   | { status: 'loading' }
@@ -85,7 +86,7 @@ export function QccNationalDirectoryContent({ manifest, index, guangdongIndex = 
         const exportedAt = isGuangdong && guangdongIndex ? guangdongIndex.exportedAt : manifest.exportedAt;
         return <li key={record.id} className="min-w-0"><article className="record-card"><div className="flex flex-col gap-3 px-5 py-4 sm:py-5"><div className="flex flex-wrap items-start justify-between gap-2"><h3 className="m-0 min-w-0 break-words text-[18px] font-semibold leading-snug"><a href={detailHref} className="text-ink no-underline hover:text-brand">{record.name}</a></h3><span className={'tag shrink-0 ' + (caution ? 'text-caution' : '')}>{record.registrationStatus || '登记状态未提供'}</span></div><p className="m-0 text-[14px] text-body">地区：{selectedProvince?.name} · {record.city}{record.district ? ' · ' + record.district : ''}</p><p className="m-0 text-[14px] text-body">主体类型：{record.subjectType || '类型未提供'}</p></div><footer aria-label="来源与核对" className="record-evidence"><span className="min-w-0 break-words">{sourceFile} · 原始文件第 {record.rowNumber} 行 · 导出时间 <time dateTime={exportedAt}>{exportedAt}</time></span><a href={detailHref} className="inline-flex min-h-11 items-center font-semibold">查看登记详情 →</a></footer></article></li>;
       })}</ul>}
-      {result.total > 0 && <nav aria-label="候选记录分页" className="flex flex-wrap items-center justify-center gap-2">{result.page > 1 && <a href={sitePath(unifiedQccListHref({ ...result, page: result.page - 1 }))} className="btn-outline px-3 text-sm" rel="prev">上一页</a>}<span className="text-[13px] text-sub">第 {result.page} / {result.pageCount} 页 · 每页 20 条</span>{result.page < result.pageCount && <a href={sitePath(unifiedQccListHref({ ...result, page: result.page + 1 }))} className="btn-outline px-3 text-sm" rel="next">下一页</a>}</nav>}
+      {result.total > 0 && <DirectoryPager label="候选记录分页" page={result.page} pageCount={result.pageCount} hint="每页 20 条" hrefFor={next => sitePath(unifiedQccListHref({ ...result, page: next }))} />}
     </>}
     <div className="card p-4"><h2 className="m-0 text-base font-semibold">按省市查登记主体</h2><p className="mb-0 mt-1 text-[14px] text-body">可选大陆 {manifest.provinces.length + 1} 个省级地区。广东与其他省份来自不同来源快照，记录保持原始行号与编号；这些记录不当作去重机构数。</p></div>
     <div className="card p-5 text-[13px] text-sub"><p className="m-0">{isGuangdong && guangdongIndex ? <>来源：广东企查查导出快照，导出时间 <time dateTime={guangdongIndex.exportedAt}>{guangdongIndex.exportedAt}</time>，原始行数 {guangdongIndex.records.length.toLocaleString('zh-CN')}。</> : <>来源：{manifest.sourceFiles.length} 份跨省企查查导出快照，导出时间 <time dateTime={manifest.exportedAt}>{manifest.exportedAt}</time>，原始行数 {manifest.rowCount.toLocaleString('zh-CN')}。</>} 这不是全国养老机构名录，也不是实时登记数据。</p><p className="mb-0 mt-2">广东与其他省份来自不同快照，记录保持各自来源和编号；不据此计算去重机构总数。</p><a href={sitePath(isGuangdong ? '/data/qcc/index.v1.json' : '/data/qcc-national/manifest.v1.json')} className="underlink mt-2 inline-block">查看当前来源快照清单 JSON</a></div>
@@ -118,7 +119,7 @@ export function QccNationalDirectoryView() {
     });
     return () => controller.abort();
   }, [locationKey, attempt]);
-  if (state.status === 'loading' || (state.status === 'ready' && state.locationKey !== locationKey)) return <div className="notice" role="status">正在加载全国登记主体候选清单…</div>;
+  if (state.status === 'loading' || (state.status === 'ready' && state.locationKey !== locationKey)) return <ListSkeleton label="正在加载全国登记主体候选清单…" />;
   if (state.status === 'error') return <div className="notice" role="alert"><p className="m-0">{state.message}</p><button type="button" className="btn-outline mt-3" onClick={() => setAttempt(value => value + 1)}>重试读取</button><a href={sitePath('/quanguo/zhuti/')} className="underlink ml-4">返回地区选择</a></div>;
   return <QccNationalDirectoryContent key={locationKey} manifest={state.manifest} index={state.index} guangdongIndex={state.guangdongIndex} query={query} />;
 }

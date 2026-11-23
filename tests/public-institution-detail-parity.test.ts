@@ -205,7 +205,7 @@ test('official detail page uses a full-width profile and in-flow section navigat
   };
   const html = renderToStaticMarkup(React.createElement(NationalOfficialDetailContent, { manifest, record: official, from: null }));
   assert.match(html, /institution-detail-page/);
-  assert.ok(html.includes('id="overview"') && html.includes('bg-[#FFF0D0]'));
+  assert.ok(html.includes('id="overview"') && html.includes('bg-brand-tint'));
   assert.match(html, /aria-label="本页目录"/);
   assert.doesNotMatch(html, /aria-label="本页目录"[^>]*sticky/);
   assert.ok(html.indexOf('id="overview"') < html.indexOf('aria-label="床位与费用摘要"'));
@@ -222,7 +222,7 @@ test('reference detail page keeps candidate evidence after the official-style re
     manifest, record: reference, provinceName: '河北省', cityName: '石家庄市', from: null,
   }));
   assert.match(html, /institution-detail-page/);
-  assert.ok(html.includes('id="overview"') && html.includes('bg-[#FFF0D0]'));
+  assert.ok(html.includes('id="overview"') && html.includes('bg-brand-tint'));
   assert.match(html, /aria-label="本页目录"/);
   assert.doesNotMatch(html, /aria-label="本页目录"[^>]*sticky/);
   assert.ok(html.indexOf('id="reviews"') < html.indexOf('id="official"'));

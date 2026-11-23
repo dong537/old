@@ -30,7 +30,9 @@ test('reference directory places visible conditions before results and keeps evi
   assert.match(html, /<summary[^>]*>[^]*查找条件/);
   assert.match(html, /<footer[^>]*aria-label="来源与核对"/);
   assert.match(html, /资料时点未知/);
-  assert.match(html, /原表床位数 0 张/);
+  assert.match(html, /原表床位数[\s\S]{0,80}?0 张/);
+  // 缺失字段合并成一行说明，但仍逐项列出字段名（见 DirectoryUi.RecordFacts）
+  assert.match(html, /本来源未提供：护理型床位、月费用、机构星级/);
 });
 
 test('reference search leads into left-side region filters and right-side results', () => {
@@ -55,8 +57,7 @@ test('static province page keeps city selection beside source rows and the origi
   assert.match(html, /from=%2Fquanguo%2Fcankao%2Fsheng%2Fhebei%2F/);
   assert.match(html, /aria-label="检索本省养老机构来源线索"/);
   assert.ok(html.indexOf('aria-label="检索本省养老机构来源线索"') < html.indexOf('aria-label="地区分组"'));
-  assert.match(html, /护理型床位[^<]*本来源未提供/);
-  assert.match(html, /月费用[^<]*本来源未提供/);
+  assert.match(html, /本来源未提供：护理型床位、月费用、机构星级/);
 });
 
 test('QCC source detail offers an explicitly unverified MCA name search', () => {

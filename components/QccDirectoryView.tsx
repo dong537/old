@@ -6,6 +6,7 @@ import type { QccIndex } from '@/lib/qcc-types';
 import { isQccStatusCaution, loadQccIndex, qccListHref, qccStatusCategory, searchQccRecords } from '@/lib/qcc-search';
 import type { QccSearchParams } from '@/lib/qcc-search';
 import { sitePath } from '@/lib/site-path';
+import { ListSkeleton } from './DirectoryUi';
 
 type LoadState = { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready'; index: QccIndex };
 
@@ -66,7 +67,7 @@ export function QccDirectoryView() {
     });
     return () => controller.abort();
   }, [attempt]);
-  if (state.status === 'loading') return <div className="notice" role="status">正在加载登记主体索引…</div>;
+  if (state.status === 'loading') return <ListSkeleton label="正在加载登记主体索引…" />;
   if (state.status === 'error') return <div className="notice" role="alert"><p className="m-0">{state.message}</p><button type="button" className="btn-outline mt-3" onClick={() => setAttempt(value => value + 1)}>重试读取</button></div>;
   return <QccDirectoryResults index={state.index} query={{ q: params.get('q') ?? '', city: params.get('city') ?? '', type: params.get('type') ?? '', status: params.get('status') ?? '', page: params.get('page') ?? '1' }} />;
 }

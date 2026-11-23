@@ -136,12 +136,13 @@ export default function RulesPage() {
       <Link href="/quanguo/cankao/">查找养老机构 →</Link>
     </Sec>
 
-    <Sec id="rankings" title="榜单（暂未开放）">
+    <Sec id="rankings" title="榜单与发布条件">
       <ul className="m-0 flex flex-col gap-1.5 pl-5 text-body">
         <li>当前没有可支撑机构排名的收费明细、探访、回访或报错处理数据。</li>
         <li>不根据名单顺序、备案床位或资料缺失情况生成“最好”“最推荐”等结论。</li>
-        <li>首页保留榜单栏目位置并说明暂未发布，不展示示例机构或虚构分数。</li>
+        <li>榜单页面已开放，本期质量榜未发布；逐项说明发布条件，不展示示例机构或虚构分数。</li>
       </ul>
+      <Link href="/quanguo/bangdan/">查看榜单与发布条件 →</Link>
     </Sec>
 
     <Sec id="leads" title="预约与线索（暂未开放）">

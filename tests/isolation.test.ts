@@ -107,6 +107,44 @@ test('public scan rejects private-only schema markers even without private input
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
+test('public scan permits reviewed policy prose without masking private leaks', async () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'eldercare-policy-isolation-'));
+  const prose = '非营利性养老服务机构可凭登记机关发给的社会服务机构登记证书申请划拨供地。';
+  const data = path.join(dir, 'data', 'policy-content');
+  const page = path.join(dir, 'zhengce', 'cbcaff37290a74c97a18247c8d2f81e4');
+  const index = path.join(dir, 'zhengce');
+  try {
+    mkdirSync(data, { recursive: true });
+    mkdirSync(page, { recursive: true });
+    const json = path.join(data, 'zhengce.v1.json');
+    const html = path.join(page, 'index.html');
+    const txt = path.join(index, 'index.txt');
+    const policy = (content: string) => JSON.stringify({ section: 'zhengce', label: '政策文件', items: [{
+      id: 'cbcaff37290a74c97a18247c8d2f81e4', title: '国务院办公厅关于推进养老服务发展的意见',
+      section: 'zhengce', content,
+    }] });
+    writeFileSync(json, policy('<p>' + prose + '</p>'));
+    writeFileSync(html, '<article><p>' + prose + '</p></article>');
+    writeFileSync(txt, prose);
+    assert.equal((await scanPublicOutput(dir)).filesScanned, 3);
+
+    writeFileSync(json, policy('<p>' + prose + ' 登记机关：某公司</p>'));
+    await assert.rejects(scanPublicOutput(dir), /私有/);
+    writeFileSync(json, policy('<p>' + prose + '</p>'));
+    writeFileSync(html, '<article>' + prose + ' 登记机关：某公司</article>');
+    await assert.rejects(scanPublicOutput(dir), /私有/);
+    writeFileSync(html, '<article><p>' + prose + '</p></article>');
+
+    for (const leaked of ['companyCreditCode', 'private-known-id', '13800000000']) {
+      writeFileSync(json, policy('<p>' + prose + leaked + '</p>'));
+      await assert.rejects(scanPublicOutput(dir, ['private-known-id'], ['13800000000']), /私有|手机号/, leaked);
+    }
+    writeFileSync(json, policy('<p>' + prose + '</p>'));
+    writeFileSync(path.join(dir, 'other.html'), prose);
+    await assert.rejects(scanPublicOutput(dir), /私有/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
 test('public scan blocks MCA raw snapshots and unreviewed detail pages', async () => {
   const dir = mkdtempSync(path.join(tmpdir(), 'eldercare-mca-isolation-'));
   try {

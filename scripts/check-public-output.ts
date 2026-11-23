@@ -9,16 +9,53 @@ import { validateInstitutionRegistryLinks } from './check-qcc-institution-regist
 import { QCC_SOURCE_FIELD_NAMES } from '../lib/qcc-types';
 import { REFERENCE_SOURCE_FIELD_NAMES } from '../lib/institution-reference-types';
 import { validateMcaObservedOutput } from './check-mca-observed-output';
+import { MCA_CATALOG_SOURCE_LOCK, validateMcaCatalogOutput } from './check-mca-catalog-output';
 
 // These belong only to the local ChaQiGO preview, even when QCC registration fields are published.
 const privateMarkers = [
   'companyCreditCode', 'paidInCapital', 'enterpriseType', 'candidateName',
   'relationshipVerified', 'institutionStatuses', '实缴资本', '登记机关',
 ];
+// These exact phrases occur in reviewed public policy prose, including its static HTML/TXT output.
+// Do not exempt an entire file: any other occurrence of 登记机关 still blocks publication.
+const policyProsePath = /^(?:data\/policy-content\/(?:zhengce|zixun)\.v1\.json|(?:zhengce|zixun)\/(?:[a-f0-9]{32}\/)?index\.(?:html|txt))$/;
+const reviewedPolicyPhrases = [
+  '可凭登记机关发给的社会服务机构登记证书',
+  '行政许可和登记机关要核定其经营和活动范围',
+  '法人登记机关：</p>',
+] as const;
+function privateMarkerScanText(relative: string, content: string): string {
+  if (!policyProsePath.test(relative)) return content;
+  return reviewedPolicyPhrases.reduce((text, phrase) => text.replaceAll(phrase, ''), content);
+}
 const mcaPrivateMarkers = [
   'private_mca_observed_institutions', 'data/private/generated/mca-observed-catalog',
   'mca-private-raw-20261119',
 ];
+const mcaCatalogFile = /^data\/mca-catalog\/(?:manifest\.v1\.json|index\.v1\.json|details\/[a-f0-9]{64}\.v1\.json)$/;
+const mcaCatalogDetailFile = /^data\/mca-catalog\/details\/[a-f0-9]{64}\.v1\.json$/;
+const mcaCatalogRenderedDetail = /^quanguo\/pingtai\/([A-Za-z0-9_-]{7,64}|[0-9]{4,6})\/index\.(?:html|txt)$/;
+/** Only source prose in the typed, SHA-locked catalog may use this ordinary Chinese phrase.
+ * All other markers, fields, identifiers and withheld phones remain in the scan. */
+function mcaCatalogMarkerScanText(relative: string, content: string): string {
+  if (!mcaCatalogDetailFile.test(relative)) return content;
+  let parsed: unknown;
+  try { parsed = JSON.parse(content); } catch { return content; }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return content;
+  const detail = parsed as Record<string, unknown>;
+  if (!detail.fields || typeof detail.fields !== 'object' || Array.isArray(detail.fields)) return content;
+  const fields = detail.fields as Record<string, unknown>;
+  if (typeof fields.intro !== 'string') return content;
+  return JSON.stringify({ ...detail, fields: { ...fields, intro: fields.intro.replaceAll('登记机关', '') } });
+}
+
+function removeReviewedCatalogIntro(content: string, intro: string): string {
+  const escaped = intro.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
+  const representations = [intro, escaped, JSON.stringify(intro).slice(1, -1),
+    JSON.stringify(escaped).slice(1, -1)];
+  return representations.reduce((remaining, value) => remaining.replaceAll(value, ''), content);
+}
 const allowedMcaPreviewFiles = new Set([
   'quanguo/mca-preview/index.html', 'quanguo/mca-preview/index.txt',
   'quanguo/mca-preview/unavailable/index.html', 'quanguo/mca-preview/unavailable/index.txt',
@@ -592,7 +629,7 @@ function validateQccProjection(relative: string, text: string): void {
   }
 }
 
-export async function scanPublicOutput(directory: string, privateIdentifiers: string[] = [], withheldMobileNumbers: string[] = [], requireNational = false, sourceLock?: NationalSourceLock, requireOfficial = false, officialLock?: OfficialSourceLock, requireInstitutionReference = false, institutionReferenceLock?: InstitutionReferenceLock, requireInstitutionLinks = false, requireInstitutionRegistryLinks = false): Promise<{filesScanned: number}> {
+export async function scanPublicOutput(directory: string, privateIdentifiers: string[] = [], withheldMobileNumbers: string[] = [], requireNational = false, sourceLock?: NationalSourceLock, requireOfficial = false, officialLock?: OfficialSourceLock, requireInstitutionReference = false, institutionReferenceLock?: InstitutionReferenceLock, requireInstitutionLinks = false, requireInstitutionRegistryLinks = false, requireMcaCatalog = false): Promise<{filesScanned: number}> {
   let filesScanned = 0;
   let nationalManifest: NationalManifest | null = null;
   const nationalIndexes = new Map<string, NationalIndexSummary>();
@@ -606,6 +643,8 @@ export async function scanPublicOutput(directory: string, privateIdentifiers: st
   const guangdongRegistryFiles = new Map<string, string>();
   const officialReferenceFiles = new Map<string, string>();
   const mcaObservedFiles = new Map<string, string>();
+  const mcaCatalogFiles = new Map<string, string>();
+  const renderedCatalogIntros = new Map<string, string>();
   let guangdongReferenceContent: string | undefined;
   const officialRawHashes = new Set(officialLock?.sources.map(source => source.sha256) ?? []);
   async function walk(folder: string): Promise<void> {
@@ -621,7 +660,7 @@ export async function scanPublicOutput(directory: string, privateIdentifiers: st
         throw new Error('公开输出含私有原件目录：' + relative);
       }
       if (relative.startsWith('data/.mca-observed-') ||
-        (relative.startsWith('data/mca-') && !relative.startsWith('data/mca-observed/')) ||
+        (relative.startsWith('data/mca-') && !relative.startsWith('data/mca-observed/') && !mcaCatalogFile.test(relative)) ||
         (relative.startsWith('quanguo/mca-preview/') && !allowedMcaPreviewFiles.has(relative))) {
         throw new Error('公开输出含未经审核的MCA数据或详情页：' + relative);
       }
@@ -633,13 +672,25 @@ export async function scanPublicOutput(directory: string, privateIdentifiers: st
           throw new Error('公开输出含官方来源原始' + kind + '：' + relative);
         }
       }
-      const content = (await readFile(file, 'utf8')).replace(/\\u([\da-f]{4})/gi, (_, hex: string) => String.fromCharCode(Number.parseInt(hex, 16)));
+      // Keep JSON bytes intact for structural validation; decoded control escapes are invalid JSON.
+      const fileContent = await readFile(file, 'utf8');
+      const content = fileContent.replace(/\\u([\da-f]{4})/gi, (_, hex: string) => String.fromCharCode(Number.parseInt(hex, 16)));
+      const privateScanContent = mcaCatalogMarkerScanText(relative, privateMarkerScanText(relative, content));
       if (mcaPrivateMarkers.some(marker => content.includes(marker))) {
         throw new Error('公开输出发现MCA私有快照标记，停止发布：' + relative);
       }
       if (relative === 'data/guangdong-source-records.v1.json') guangdongReferenceContent = content;
       if (relative.startsWith('data/mca-observed/')) {
         mcaObservedFiles.set(relative, content);
+      } else if (relative.startsWith('data/mca-catalog/')) {
+        const catalogScanText = mcaCatalogMarkerScanText(relative, fileContent)
+          .replace(/\\u([\da-f]{4})/gi, (_, hex: string) => String.fromCharCode(Number.parseInt(hex, 16)));
+        if (!mcaCatalogFile.test(relative) ||
+          privateMarkers.some(marker => catalogScanText.includes(marker)) ||
+          privateIdentifiers.some(identifier => identifier.length > 0 && content.includes(identifier))) {
+          throw new Error('公开输出含未经批准的MCA目录路径或私有字段：' + relative);
+        }
+        mcaCatalogFiles.set(relative, fileContent);
       } else if (relative.startsWith('data/qcc/')) {
         if (!qccPath.test(relative)) throw new Error('QCC投影目录含未经批准文件：' + relative);
         validateQccProjection(relative, content);
@@ -678,10 +729,18 @@ export async function scanPublicOutput(directory: string, privateIdentifiers: st
         institutionLinkFiles.set(relative, content);
       } else if (relative.startsWith('data/qcc-institution-registry-links/')) {
         institutionRegistryLinkFiles.set(relative, content);
-      } else if ((relative.endsWith('.json') && /"(?:creditCode|legalRepresentative|registeredCapital|businessScope)"\s*:/.test(content)) ||
-        privateMarkers.some((marker) => content.includes(marker)) ||
-        privateIdentifiers.some((identifier) => identifier.length > 0 && content.includes(identifier))) {
-        throw new Error('公开输出发现私有工商字段或标识，停止发布：' + relative);
+      } else {
+        if ((relative.endsWith('.json') && /"(?:creditCode|legalRepresentative|registeredCapital|businessScope)"\s*:/.test(content)) ||
+          privateMarkers.some((marker) => marker !== '登记机关' && privateScanContent.includes(marker)) ||
+          privateIdentifiers.some((identifier) => identifier.length > 0 && content.includes(identifier))) {
+          throw new Error('公开输出发现私有工商字段或标识，停止发布：' + relative);
+        }
+        if (privateScanContent.includes('登记机关')) {
+          if (!mcaCatalogRenderedDetail.test(relative)) {
+            throw new Error('公开输出发现私有工商字段或标识，停止发布：' + relative);
+          }
+          renderedCatalogIntros.set(relative, privateScanContent);
+        }
       }
       const rawFieldSet = /^data\/qcc\/chunk-\d{3}\.v1\.json$/.test(relative) || nationalChunkPath.test(relative)
         ? QCC_SOURCE_FIELD_NAMES
@@ -696,6 +755,22 @@ export async function scanPublicOutput(directory: string, privateIdentifiers: st
   }
   await walk(directory);
   validateMcaObservedOutput(mcaObservedFiles);
+  if (mcaCatalogFiles.size > 0 || requireMcaCatalog) {
+    validateMcaCatalogOutput(mcaCatalogFiles, mcaObservedFiles,
+      requireMcaCatalog ? MCA_CATALOG_SOURCE_LOCK : undefined);
+  }
+  for (const [relative, content] of renderedCatalogIntros) {
+    const id = relative.match(mcaCatalogRenderedDetail)?.[1];
+    const detailFile = id && 'data/mca-catalog/details/' + createHash('sha256').update(id).digest('hex') + '.v1.json';
+    const raw = detailFile && mcaCatalogFiles.get(detailFile);
+    if (!raw) throw new Error('公开详情缺少已校验的 CSV 来源：' + relative);
+    const detail = JSON.parse(raw) as { mcaId: string; sourceKind: string; fields: { intro: string | null } };
+    const intro = detail.fields.intro;
+    if (detail.mcaId !== id || detail.sourceKind !== 'csv' || !intro?.includes('登记机关') ||
+      removeReviewedCatalogIntro(content, intro).includes('登记机关')) {
+      throw new Error('公开详情含来源介绍以外的私有工商标记：' + relative);
+    }
+  }
   if (requireNational && !nationalManifest) throw new Error('QCC全国投影缺失manifest');
   if (nationalManifest || nationalIndexes.size || nationalChunks.size) {
     if (!nationalManifest) throw new Error('QCC全国投影缺失manifest');
@@ -876,7 +951,7 @@ async function main() {
   }
   const officialLock = JSON.parse(await readFile('data/raw/national-official-source-manifest.json', 'utf8')) as OfficialSourceLock;
   const institutionReferenceLock = JSON.parse(await readFile('data/raw/qcc-institutions-source-manifest.json', 'utf8')) as InstitutionReferenceLock;
-  const result = await scanPublicOutput('out', identifiers, withheldMobileNumbers, true, sourceLock, true, officialLock, true, institutionReferenceLock, true, true);
+  const result = await scanPublicOutput('out', identifiers, withheldMobileNumbers, true, sourceLock, true, officialLock, true, institutionReferenceLock, true, true, true);
   console.log('公开隔离扫描通过：' + result.filesScanned + '个文件；' + (identifiers.length ? '包含本机已知标识检查' : '无私有输入，已检查工商字段特征') + '。');
 }
 

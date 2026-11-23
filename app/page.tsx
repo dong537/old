@@ -18,9 +18,9 @@ const hotLinks = [
 
 const serviceCards = [
   { title: '民政部平台采集', description: '民政部平台部分采集快照，按地区查已观察记录', icon: '⌂', href: '/quanguo/pingtai/', external: false },
-  { title: '喘息服务查询', description: '在民政部平台查看服务点', icon: '✳', href: 'https://yanglao.mca.gov.cn/#/index/chuanXiServicesList', external: true },
-  { title: '日托服务查询', description: '在民政部平台查看服务点', icon: '◷', href: 'https://yanglao.mca.gov.cn/#/index/riTuoServicesList', external: true },
-  { title: '居家上门服务查询', description: '官网首页此入口尚未开放', icon: '⌂', href: null, external: false },
+  { title: '喘息服务查询', description: '在平台采集快照里查机构，再看是否提供喘息服务', icon: '✳', href: '/quanguo/pingtai/', external: false },
+  { title: '日托服务查询', description: '在平台采集快照里查机构，再看是否提供日托服务', icon: '◷', href: '/quanguo/pingtai/', external: false },
+  { title: '居家上门服务查询', description: '按地区查找公开列示居家、上门服务的机构线索', icon: '⌂', href: '/quanguo/shangmen/', external: false },
 ] as const;
 
 const entranceCards = [
@@ -36,7 +36,7 @@ export default function HomePage() {
       <div className="container-site relative z-10 pb-14 pt-28 sm:pt-32 lg:pt-36">
         <div className="max-w-[760px]">
           <p className="eyebrow">全国养老机构来源核查</p>
-          <h1 id="home-title" className="mt-3 text-[clamp(26px,3.6vw,38px)] font-semibold leading-[1.25] text-ink">
+          <h1 id="home-title" className="mt-3 text-[clamp(24px,3.6vw,38px)] font-semibold leading-[1.25] text-ink">
             找养老机构前，先看清资料从哪来
           </h1>
           <p className="mt-3 max-w-[640px] text-[15px] leading-7 text-body">
@@ -58,8 +58,8 @@ export default function HomePage() {
         <strong className="shrink-0 text-[13px] font-semibold text-brand sm:border-r sm:border-line sm:pr-5">热点服务</strong>
         <div className="grid flex-1 grid-cols-2 gap-x-4 gap-y-1 text-[14px] sm:flex sm:flex-wrap sm:gap-x-6">
           {hotLinks.map(link => <Link key={link.href} href={link.href} className="inline-flex min-h-9 items-center text-body no-underline transition-colors hover:text-brand">{link.label}</Link>)}
-          <a href="https://yanglao.mca.gov.cn/#/index/assessmentServicesList" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-9 items-center text-body no-underline transition-colors hover:text-brand">老年人能力评估 ↗</a>
-          <a href="https://yanglao.mca.gov.cn/#/index/institutionGuideList" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-9 items-center text-body no-underline transition-colors hover:text-brand">官网机构办事指南 ↗</a>
+          <Link href="/quanguo/pingtai/" className="inline-flex min-h-9 items-center text-body no-underline transition-colors hover:text-brand">能力评估服务点</Link>
+          <Link href="/quanguo/banshi/" className="inline-flex min-h-9 items-center text-body no-underline transition-colors hover:text-brand">机构办事指南</Link>
         </div>
       </nav>
     </div>
@@ -70,12 +70,11 @@ export default function HomePage() {
           <h2 id="service-query-title" className="m-0 text-[20px] font-semibold text-ink">服务查询</h2>
           <span className="text-[12px] text-sub">本站机构线索与平台官网服务分开展示</span>
         </div>
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{serviceCards.map(card => <article key={card.title} className="group flex min-h-[210px] flex-col rounded-card border border-line bg-white p-5 shadow-card transition-all hover:border-brand-line hover:shadow-lift">
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">{serviceCards.map(card => <article key={card.title} className="group flex min-h-[180px] flex-col rounded-card border border-line bg-white p-5 shadow-card transition-all hover:border-brand-line hover:shadow-lift sm:min-h-[200px]">
           <span aria-hidden="true" className={'flex size-11 items-center justify-center rounded-lg text-[20px] ' + (card.href ? 'bg-brand-tint text-brand' : 'bg-page text-sub')}>{card.icon}</span>
           <h3 className="mb-0 mt-4 text-[16px] font-semibold text-ink">{card.title}</h3>
           <p className="mb-0 mt-1.5 flex-1 text-[13px] leading-6 text-sub">{card.description}</p>
-          {card.href === null ? <span role="status" className="mt-4 inline-flex min-h-9 items-center rounded-md border border-line bg-page px-3 text-[13px] text-sub">官网入口建设中</span>
-            : card.external ? <a href={card.href} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex min-h-9 items-center text-[13px] font-medium text-brand no-underline hover:underline">到官网查询 ↗</a>
+          {card.external ? <a href={card.href} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex min-h-9 items-center text-[13px] font-medium text-brand no-underline hover:underline">到官网查询 ↗</a>
               : <Link href={card.href} className="mt-4 inline-flex min-h-9 items-center text-[13px] font-medium text-brand no-underline hover:underline">查看来源线索 →</Link>}
         </article>)}</div>
       </section>
@@ -90,7 +89,7 @@ export default function HomePage() {
         </div>
         <p className="mb-4 mt-2 text-[13px] leading-6 text-body">按省份查看企查查来源表记录；记录不等于当前在营机构，也不自动关联民政部平台记录。</p>
         <div className="max-w-[760px]">
-          <details className="group rounded-lg border border-line bg-white">
+          <details open className="group rounded-lg border border-line bg-white">
             <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between px-4 py-3 text-[14px] font-semibold text-ink [&::-webkit-details-marker]:hidden">
               按省份展开来源线索
               <span aria-hidden="true" className="text-sub transition-transform group-open:rotate-180">⌄</span>

@@ -8,12 +8,12 @@ import { Logo } from './DirectoryUi';
 
 const primaryNav = [
   { href: '/', name: '首页' },
-  { href: 'https://yanglao.mca.gov.cn/#/index/newLasterList', name: '政策资讯', external: true },
-  { href: '/quanguo/pingtai/', name: '平台采集快照（部分）' },
-  { href: 'https://yanglao.mca.gov.cn/#/index/personGuideList', name: '在线办理', external: true },
-  { href: 'https://yanglao.mca.gov.cn/#/index/nurseQuery', name: '养老人才/服务', external: true },
-  { href: 'https://yanglao.mca.gov.cn/#/index/fireSafetyPublicity', name: '安全教育', external: true },
-  { href: 'https://yanglao.mca.gov.cn/#/homePage', name: '养老服务消费补贴', external: true, homeFallback: true },
+  { href: '/quanguo/pingtai/', name: '找养老机构' },
+  { href: '/quanguo/shangmen/', name: '找上门服务' },
+  { href: '/quanguo/changhuxian/', name: '长护险指南' },
+  { href: '/quanguo/jiage/', name: '价格参考' },
+  { href: '/quanguo/bangdan/', name: '榜单' },
+  { href: '/rules/', name: '方法论' },
 ];
 
 const supportNav = [
@@ -64,26 +64,26 @@ function SiteHeaderContent({ publishedAt, searchKeyword, showMcaPreview }: { pub
   const isInstitutionReferenceRoute = pathname === '/quanguo/cankao' || pathname.startsWith('/quanguo/cankao/');
   const isQccRoute = pathname === '/guangdong/zhuti' || pathname.startsWith('/guangdong/zhuti/');
   const isNationalQccRoute = pathname === '/quanguo/zhuti' || pathname.startsWith('/quanguo/zhuti/');
-  const ownsSearch = ['/guangzhou/jigou', '/guangzhou/shangmen', '/guangdong/jigou', '/guangdong/zhuti', '/quanguo/cankao', '/quanguo/laiyuan', '/quanguo/zhuti', '/quanguo/pingtai'].includes(pathname.replace(/\/$/, '')) || isMcaPreviewRoute;
+  const ownsSearch = ['/guangzhou/jigou', '/guangzhou/shangmen', '/guangdong/jigou', '/guangdong/zhuti', '/quanguo/cankao', '/quanguo/laiyuan', '/quanguo/zhuti', '/quanguo/pingtai', '/quanguo/shangmen', '/quanguo/changhuxian', '/quanguo/jiage', '/quanguo/bangdan'].includes(pathname.replace(/\/$/, '')) || isMcaPreviewRoute;
   const searchRoute = isServiceRoute ? '/guangzhou/shangmen/' : isMcaPublicRoute ? '/quanguo/pingtai/' : isProvinceRoute || isNationalOfficialRoute ? '/quanguo/laiyuan/' : isQccRoute || isNationalQccRoute ? '/quanguo/zhuti/' : '/quanguo/cankao/';
   const scopeLabel = isMcaPreviewRoute ? '全国平台已观察记录 · 本机预览' : isMcaPublicRoute ? '民政部平台部分采集快照' : isHomeRoute || isInstitutionReferenceRoute ? '全国机构来源线索' : isNationalOfficialRoute || isProvinceRoute ? '地方官方来源记录' : isNationalQccRoute || isQccRoute ? '登记主体候选' : isServiceRoute ? '广州养老服务记录' : '机构档案';
   const router = useRouter();
   const [q, setQ] = useState(searchKeyword);
-  const navLink = (item: { href: string; name: string; external?: boolean; homeFallback?: boolean }, mobile: boolean) => {
-    const current = !item.external && (item.href === '/' ? pathname === '/' :
-      item.href === '/quanguo/pingtai/' && isMcaPreviewRoute ||
+  const navLink = (item: { href?: string; name: string }, secondary: boolean) => {
+    const current = item.href !== undefined && (item.href === '/' ? pathname === '/' :
+      (item.href === '/quanguo/pingtai/' && isMcaPreviewRoute) ||
       pathname === item.href.slice(0, -1) || pathname.startsWith(item.href));
-    const className = mobile
-      ? 'flex min-h-11 items-center justify-between gap-2 rounded-md px-3 py-2.5 no-underline ' + (current ? 'bg-brand-tint font-semibold text-brand-ink' : 'text-ink hover:bg-page')
-      : 'inline-flex min-h-12 items-center gap-1 whitespace-nowrap border-b-[3px] px-1 pt-[3px] text-[17px] font-medium no-underline ' + (current ? 'border-brand font-semibold text-brand-dark' : 'border-transparent text-brand-dark hover:border-brand hover:text-brand-dark');
-    if (item.external) return <a key={item.name} href={item.href} target="_blank" rel="noopener noreferrer" aria-label={`${item.name}，${item.homeFallback ? '先到平台官网首页继续查找栏目' : '打开平台官网对应栏目'}（外部）`} title={item.homeFallback ? '该栏目的官网直达地址待核，先打开平台官网首页' : '打开全国养老服务信息平台官网栏目'} className={className}>{item.name}<span className="text-[11px] font-normal" aria-hidden="true">↗</span><span className="sr-only">外部</span></a>;
+    const className = secondary
+      ? 'flex min-h-11 items-center justify-between gap-2 rounded-md px-3 py-2.5 no-underline ' + (current ? 'bg-brand-tint font-semibold text-brand-ink' : item.href ? 'text-ink hover:bg-page' : 'text-sub')
+      : 'inline-flex min-h-12 shrink-0 items-center gap-1 whitespace-nowrap border-b-[3px] px-1 pt-[3px] text-[15px] font-medium no-underline sm:text-[17px] ' + (current ? 'border-brand font-semibold text-brand-dark' : item.href ? 'border-transparent text-brand-dark hover:border-brand hover:text-brand-dark' : 'border-transparent text-sub');
+    if (!item.href) return <span key={item.name} aria-disabled="true" className={className}>{item.name}<span className="text-[11px] font-normal">待开放</span></span>;
     return <Link key={item.href} href={item.href} aria-current={current ? 'page' : undefined} className={className}>{item.name}</Link>;
   };
-  const allNav = showMcaPreview ? [...primaryNav, ...supportNav, { href: '/quanguo/mca-preview/', name: '全国平台本机预览' }] : [...primaryNav, ...supportNav];
+  const secondaryNav = showMcaPreview ? [...supportNav, { href: '/quanguo/mca-preview/', name: '全国平台本机预览' }] : supportNav;
   return <header className={isHomeRoute ? 'relative z-20 border-b border-transparent bg-transparent' : 'relative z-20 border-b border-line bg-white shadow-[0_1px_0_rgba(17,32,40,0.04)]'}>
     <div className={isHomeRoute ? 'bg-transparent' : 'portal-header-surface'}>
       <div className="container-site flex min-h-[82px] items-center justify-between gap-5 py-3">
-        <div className="shrink-0 origin-left xl:scale-[1.15]"><Logo /></div>
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3"><div className="shrink-0 origin-left xl:scale-[1.15]"><Logo /></div><span className="inline-flex whitespace-nowrap rounded-md border border-brand-line bg-brand-tint px-2 py-1 text-xs text-brand-ink">全国<span className="hidden sm:inline"> · 分批收录</span></span></div>
         <div className="hidden items-center justify-end gap-5 xl:flex">
           <span className="whitespace-nowrap text-[12px] text-sub">独立资料整理</span>
           <nav aria-label="本站资料入口" className="flex flex-wrap justify-end gap-x-4 gap-y-1 text-[13px]">{supportNav.map(item => <Link key={item.href} href={item.href} className="whitespace-nowrap text-brand-ink underline-offset-4 hover:underline">{item.name}</Link>)}{showMcaPreview && <Link href="/quanguo/mca-preview/">本机预览</Link>}<a href="https://yanglao.mca.gov.cn/#/homePage" target="_blank" rel="noopener noreferrer" className="whitespace-nowrap text-brand-ink underline-offset-4 hover:underline">民政部平台 ↗</a></nav>
@@ -94,13 +94,13 @@ function SiteHeaderContent({ publishedAt, searchKeyword, showMcaPreview }: { pub
         event.currentTarget.open = false;
         event.currentTarget.querySelector('summary')?.focus();
       }}>
-        <summary className="flex min-h-11 cursor-pointer list-none items-center rounded-md border border-brand-line bg-white/80 px-3 font-semibold text-brand-dark [&::-webkit-details-marker]:hidden">菜单</summary>
-        <nav aria-label="移动端主导航" className="absolute right-0 top-full z-30 mt-2 grid w-[min(86vw,320px)] max-h-[75vh] gap-1 overflow-y-auto rounded-md border border-brand-line bg-white p-3 shadow-xl">{allNav.map(item => navLink(item, true))}</nav>
+        <summary className="flex min-h-11 cursor-pointer list-none items-center rounded-md border border-brand-line bg-white/80 px-3 text-sm font-semibold text-brand-dark [&::-webkit-details-marker]:hidden">资料</summary>
+        <nav aria-label="本站资料入口" className="absolute right-0 top-full z-30 mt-2 grid w-[min(86vw,320px)] max-h-[75vh] gap-1 overflow-y-auto rounded-md border border-brand-line bg-white p-3 shadow-xl">{secondaryNav.map(item => navLink(item, true))}</nav>
       </details>
       </div>
     </div>
     <div className={isHomeRoute ? 'border-t border-line/70 bg-transparent' : 'border-t border-line bg-brand-tint/40'}><div className="container-site">
-      <nav aria-label="主导航" className="hidden w-full flex-wrap items-center justify-between gap-x-2 gap-y-0 xl:flex">{primaryNav.map(item => navLink(item, false))}</nav>
+      <nav aria-label="主导航" className="flex w-full items-center gap-5 overflow-x-auto overscroll-x-contain whitespace-nowrap sm:gap-7 xl:justify-between">{primaryNav.map(item => navLink(item, false))}</nav>
     </div></div>
     {!isHomeRoute && !ownsSearch && <div className="border-t border-hair bg-brand-tint/40">
       <div className="container-site flex flex-wrap items-center gap-x-5 gap-y-2 py-3">

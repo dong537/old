@@ -23,13 +23,15 @@
   #main-content:has(> .home-page) { display: block; width: 100%; max-width: none; margin: 0; padding: 0; }
   #main-content:has(> .institution-detail-page) { display: block; width: 100%; max-width: none; margin: 0; padding: 0; }
   .home-hero { background: #eef4f4; border-bottom: 1px solid #dfe9e8; }
-  .home-page .home-hero { margin-top: -83px; }
+  .home-page .home-hero { margin-top: -131px; }
   .container-site { @apply mx-auto w-full max-w-site px-4 sm:px-6 lg:px-8; }
   .card { @apply rounded-card border border-line bg-white shadow-card; }
   .source-entry { @apply flex min-w-0 flex-col rounded-card border border-line bg-white p-5 shadow-card transition-all hover:border-brand hover:shadow-lift; }
   .filter-panel { @apply rounded-card border border-line bg-white p-4 shadow-card sm:p-5; }
   .record-card { @apply overflow-hidden rounded-card border border-line bg-white shadow-card transition-all hover:border-brand-line hover:shadow-lift; }
-  .record-evidence { @apply flex flex-wrap items-center justify-between gap-x-5 gap-y-1 border-t border-hair bg-brand-tint/40 px-5 py-3 text-[13px] text-sub; }
+  .record-evidence { @apply flex flex-col items-start gap-2 border-t border-hair bg-brand-tint/40 px-4 py-3 text-[13px] text-sub sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-x-5 sm:px-5; }
+  .record-evidence > * { min-width: 0; overflow-wrap: anywhere; }
+  .record-evidence a { @apply inline-flex min-h-11 items-center sm:min-h-9; }
   .panel { @apply rounded-card border border-line bg-white shadow-card; }
   .section-panel { @apply panel p-5 sm:p-7; }
   .btn { @apply inline-flex h-11 items-center justify-center gap-1.5 rounded-lg px-5 font-semibold no-underline transition-all disabled:cursor-not-allowed disabled:opacity-50; }
@@ -59,10 +61,6 @@
   .detail-value { @apply m-0 text-base font-medium; }
   .visit-answer-line { min-height: 1.25rem; border-bottom: 1px solid #b8bec5; }
   .visit-date-line { width: 7rem; min-height: 1.25rem; border-bottom: 1px solid #b8bec5; }
-}
-
-@media (min-width: 1024px) {
-  .home-page .home-hero { margin-top: -131px; }
 }
 
 @media print {
