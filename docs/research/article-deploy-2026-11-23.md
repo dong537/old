@@ -24,4 +24,11 @@
 - 2026-11-23：npm test 为 421/421 通过，npm run typecheck 退出码 0。此前无前缀构建及本地 Chromium 自测已通过；本轮仍需重新执行 /eldercare 前缀构建和预览。
 - 2026-11-23：部署前 HTTPS 最新基线 /eldercare/ 为 200 且 X-Robots-Tag: noindex, nofollow，release.txt 为 6064dc3a6608b2cf3ae281cea252dca11cb5b17e；根路径 / 和 /tk-license/ 均为 200。较早一次 /tk-license/ 检查曾为 404，发布前后只按最新基线验收，不将其变化归因于本轮部署。
 - 2026-11-23：首次带前缀构建在导出后遇 Windows EBUSY，目标是旧 out/ 下一个 HTML。确认本地 scripts/preview.mjs 正占用 3105 并读取 out/，仅停止该预览进程后重建。第二次带前缀构建退出码 0，生成 7,113 个静态页；公开隔离扫描 21,818 个文件通过。
-- 2026-11-23：重新启动 /eldercare 前缀预览后，首页、全国平台目录、示例机构详情、首篇文章、目录 manifest、上门服务与价格页均返回 200；不存在路径返回 404。Playwright Chromium 打开文章页、识别来源区并点击来源锚点，URL 正确定位，控制台 0 条错误和 0 条警告。暂待 GitHub 干净 checkout 和线上验收。
+- 2026-11-23：重新启动 /eldercare 前缀预览后，首页、全国平台目录、示例机构详情、首篇文章、目录 manifest、上门服务与价格页均返回 200；不存在路径返回 404。Playwright Chromium 打开文章页、识别来源区并点击来源锚点，URL 正确定位，控制台 0 条错误和 0 条警告。GitHub 干净检出与线上验收结果见下节。
+
+## 实际发布与线上验收（2026-11-23）
+
+- 发布源码提交 236b9d6137102d3ec71347f53cdff4997f73ac45，显式提交 3,586 个网站切片文件；未纳入私有源文件、采集控制器、临时构建产物或本地环境变量。GitHub Actions 运行 45158178687 从 main 的干净检出完成类型检查、全量测试、前缀构建、公开隔离扫描、归档上传、远端原子切换和发布标记检查，build 与 deploy 两个 job 均为 success，回滚步骤 skipped，临时上传文件清理成功。
+- 发布前线上 release.txt 为 6064dc3a6608b2cf3ae281cea252dca11cb5b17e；发布后为 236b9d6137102d3ec71347f53cdff4997f73ac45。首页、全国平台目录、样例机构详情、首篇文章、MCA 目录 manifest、上门服务、长护险、价格和榜单均返回 200；CSS 资源返回 200，未知路径返回 404。根路径和 /tk-license/ 仍返回 200，/eldercare/ 的 X-Robots-Tag 继续包含 noindex。
+- 线上 Playwright Chromium 在 375px 视口打开文章页，资料来源区可见，documentWidth 与 viewport 均为 375；从机构详情页的文章链接能进入该文章，控制台 0 条错误和 0 条警告。以上为开发者自测，不等于真实家属用户验收。原始快照的时效性、可预约状态和当前价格仍须分别核实。
+- 若需回滚，既有发布目录的上一个目标由部署脚本记录。运维需经可用的 SSH 通道把仓库内 deploy/release-eldercare.sh 放到远端临时目录，再对运行 45158178687-1 和源码提交 236b9d6137102d3ec71347f53cdff4997f73ac45 执行 rollback；脚本仅在当前版本仍为本次发布时切回旧目标。不要删除旧版本目录。
