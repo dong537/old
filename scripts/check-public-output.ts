@@ -54,7 +54,24 @@ function removeReviewedCatalogIntro(content: string, intro: string): string {
     .replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
   const representations = [intro, escaped, JSON.stringify(intro).slice(1, -1),
     JSON.stringify(escaped).slice(1, -1)];
-  return representations.reduce((remaining, value) => remaining.replaceAll(value, ''), content);
+  const stripReviewedIntro = (text: string) =>
+    representations.reduce((remaining, value) => remaining.replaceAll(value, ''), text);
+  // Next's Flight stream can split a single source intro between adjacent script pushes.
+  // Decode and join only recognized data chunks, then scan the complete stream too. Other
+  // script content remains in the ordinary scan and cannot borrow this exemption.
+  const flightChunks: string[] = [];
+  const ordinaryContent = content.replace(
+    /<script>self\.__next_f\.push\(\[1,("(?:\\.|[^"\\])*")\]\)<\/script>/g,
+    (script, quoted: string) => {
+      try {
+        const value: unknown = JSON.parse(quoted);
+        if (typeof value !== 'string') return script;
+        flightChunks.push(value);
+        return '';
+      } catch { return script; }
+    },
+  );
+  return stripReviewedIntro(ordinaryContent) + stripReviewedIntro(flightChunks.join(''));
 }
 const allowedMcaPreviewFiles = new Set([
   'quanguo/mca-preview/index.html', 'quanguo/mca-preview/index.txt',
@@ -937,6 +954,13 @@ export async function scanPublicOutput(directory: string, privateIdentifiers: st
 }
 
 async function main() {
+  const outputDir = process.env.ELDERCARE_EXPORT_DIR ?? 'out';
+  // Keep this aligned with next.config.mjs; never scan an arbitrary path from the environment.
+  if (outputDir !== 'out' && (!/^out-ui-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(outputDir)
+    || path.isAbsolute(outputDir) || outputDir.includes('/')
+    || outputDir.includes(path.win32.sep))) {
+    throw new Error('ELDERCARE_EXPORT_DIR must be a directory name like out-ui-20261124 (no path separators).');
+  }
   let identifiers: string[] = [];
   const privateCsv = 'data/private/registration_status_all235.csv';
   if (existsSync(privateCsv)) {
@@ -951,7 +975,7 @@ async function main() {
   }
   const officialLock = JSON.parse(await readFile('data/raw/national-official-source-manifest.json', 'utf8')) as OfficialSourceLock;
   const institutionReferenceLock = JSON.parse(await readFile('data/raw/qcc-institutions-source-manifest.json', 'utf8')) as InstitutionReferenceLock;
-  const result = await scanPublicOutput('out', identifiers, withheldMobileNumbers, true, sourceLock, true, officialLock, true, institutionReferenceLock, true, true, true);
+  const result = await scanPublicOutput(outputDir, identifiers, withheldMobileNumbers, true, sourceLock, true, officialLock, true, institutionReferenceLock, true, true, true);
   console.log('公开隔离扫描通过：' + result.filesScanned + '个文件；' + (identifiers.length ? '包含本机已知标识检查' : '无私有输入，已检查工商字段特征') + '。');
 }
 

@@ -1,6 +1,7 @@
 node_modules/
 .next*/
 out/
+out-ui-*/
 out.stale-*/
 data/private/
 data/generated/

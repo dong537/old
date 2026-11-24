@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "slug": "csv-snapshot-review",
+  "institutionId": "d9385c34c855412b8ac04d5d938b56c3",
+  "status": "published",
+  "title": "孟村回族自治县民政事业服务中心（孟村镇区域养老服务中心）：2026-11-23 平台采集快照资料说明",
+  "summary": "依据全国养老服务信息平台 2026-11-23 导出数据整理的历史快照。采集记录时间为 2026-11-22；机构当前在营、空床、服务与收费请向机构或主管部门核实。",
+  "authorLabel": "本站资料整理",
+  "publishedAt": "2026-11-24",
+  "updatedAt": "2026-11-24",
+  "evidenceAsOf": "2026-11-22",
+  "sections": [
+    {
+      "heading": "机构与来源时点",
+      "paragraphs": [
+        {
+          "text": "全国养老服务信息平台的采集快照将“孟村回族自治县民政事业服务中心（孟村镇区域养老服务中心）”列在河北省沧州市孟村回族自治县。来源列示机构类型为“养老机构”。来源列示地址为“朝阳大街东侧”。采集器记录时间为 2026-11-22T16:48:19（本地时间，时区未注明），不等于来源发布日期。",
+          "sourceIds": [
+            "mca-csv"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "床位与月费怎样读",
+      "paragraphs": [
+        {
+          "text": "本次快照未列示总床位数，不能把缺项理解为 0 床。",
+          "sourceIds": [
+            "mca-csv"
+          ]
+        },
+        {
+          "text": "这次快照未列示月费区间，不能从缺项推断免费或价格。",
+          "sourceIds": [
+            "mca-csv"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "服务类别与来源说明",
+      "paragraphs": [
+        {
+          "text": "来源的服务类别原文包括：居家养老上门服务、社区养老服务、机构服务、喘息服务、日托服务。类别标签不能证明具体服务当前可约或具有相应资质。",
+          "sourceIds": [
+            "mca-csv"
+          ]
+        },
+        {
+          "text": "本次快照未列示机构介绍或服务说明；本站不据此推断服务质量、资质或医疗能力。",
+          "sourceIds": [
+            "mca-csv"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "其他列示字段",
+      "paragraphs": [
+        {
+          "text": "平台快照列示建筑面积 9,600 平方米；这不是实地测绘或当前可使用面积。",
+          "sourceIds": [
+            "mca-csv"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "仍需核对",
+      "paragraphs": [
+        {
+          "text": "采集状态原值为 ok，只表示采集记录状态，不代表机构当前在营。当前可入住床位、收费和服务内容均须另行核实。",
+          "sourceIds": [
+            "mca-csv"
+          ]
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "id": "mca-csv",
+      "title": "全国养老服务信息平台机构详情采集快照",
+      "url": "https://yanglao.mca.gov.cn/?#/index/orgServicesDetail?axbe0001=d9385c34c855412b8ac04d5d938b56c3&parentRoute=institutionList&tagValue=3",
+      "observedAt": "2026-11-22"
+    }
+  ]
+}

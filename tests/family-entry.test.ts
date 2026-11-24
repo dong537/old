@@ -25,10 +25,10 @@ test('site search starts with the current URL keyword', () => {
   assert.match(input, /value="颐福居"/);
 });
 
-test('directory header leaves keyword search to the directory form', () => {
+test('directory header keeps the nationwide search available', () => {
   const html = renderToStaticMarkup(withNavigation('/guangzhou/jigou/', 'q=颐福居',
     React.createElement(SiteHeader, { publishedAt: catalog.source.publishedAt })));
-  assert.doesNotMatch(html, /<form\b/);
+  assert.match(html, /<form\b[^>]*action="(?:\/eldercare)?\/quanguo\/pingtai\/?"/);
 });
 
 test('site search retains active Guangzhou filters while replacing the keyword', () => {
@@ -76,19 +76,18 @@ test('platform snapshot search keeps its source and active filters', () => {
   assert.equal(url.searchParams.has('page'), false);
 });
 
-test('platform detail header identifies the partial snapshot and searches within it', () => {
+test('platform detail header searches nationwide institutions', () => {
   const html = renderToStaticMarkup(withNavigation('/quanguo/pingtai/BA7E6A754BB0A66AE053E897A6C0B507/', 'q=颐养',
     React.createElement(SiteHeader, { publishedAt: catalog.source.publishedAt })));
-  assert.match(html, /民政部平台部分采集快照/);
   assert.match(html, /<form\b[^>]*action="(?:\/eldercare)?\/quanguo\/pingtai\/?"/);
-  assert.match(html, /<form\b[^>]*aria-label="民政部平台采集快照搜索"/);
+  assert.match(html, /<form\b[^>]*aria-label="搜索全国养老机构"/);
   assert.match(html, /<input\b[^>]*id="site-q"[^>]*value="颐养"/);
 });
 
 test('site search preserves the institution reference area and offers its own entry', () => {
   const html = renderToStaticMarkup(withNavigation('/quanguo/cankao/', '',
     React.createElement(SiteHeader, { publishedAt: catalog.source.publishedAt })));
-  assert.doesNotMatch(html, /<form\b/);
+  assert.match(html, /<form\b[^>]*action="(?:\/eldercare)?\/quanguo\/cankao\/?"/);
   assert.match(html, /href="\/quanguo\/cankao"[^>]*>企查查机构线索<\/a>/);
   const href = headerSearchHref('/quanguo/cankao/', ' 新词 ', '/quanguo/cankao/detail/',
     '?province=p-abc&city=c-def&id=qi-old-2&page=3');
@@ -115,7 +114,7 @@ test('home starts with nationwide search and separates source types', () => {
   const form = home.match(/<form\b[^>]*action="(?:\/eldercare)?\/quanguo\/pingtai\/?"[^>]*>/)?.[0];
   assert.ok(form, '首页应直接提供民政部平台部分采集快照搜索');
   assert.match(home, /<input\b[^>]*name="q"[^>]*>/);
-  assert.match(home, /进入目录后可按省份、城市和设施类型筛选/);
+  assert.match(home, /进入目录可按省市和设施类型筛选/);
   assert.match(home, /href="(?:\/eldercare)?\/quanguo\/cankao\/?"/);
   assert.match(home, /企查查机构线索/);
   assert.match(home, /核对官方来源/);
@@ -141,10 +140,10 @@ test('home follows the observed portal order while keeping unsupported services 
   assert.doesNotMatch(home, /预约成功|当前空床|立即申领/);
 });
 
-test('header keeps national source links available beside the prototype navigation', () => {
+test('header keeps national source links available beside the main navigation', () => {
   const header = renderToStaticMarkup(withNavigation('/', '',
     React.createElement(SiteHeader, { publishedAt: catalog.source.publishedAt })));
-  assert.match(header, /<summary[^>]*>资料<\/summary>/);
+  assert.match(header, /<summary[^>]*>.*网站导航<\/summary>/);
   assert.match(header, /全国/);
   assert.match(header, /href="(?:\/eldercare)?\/quanguo\/cankao\/?"[^>]*>企查查机构线索<\/a>/);
   assert.match(header, /href="(?:\/eldercare)?\/quanguo\/laiyuan\/?"[^>]*>官方来源<\/a>/);
@@ -152,7 +151,27 @@ test('header keeps national source links available beside the prototype navigati
   assert.match(header, /href="(?:\/eldercare)?\/quanguo\/pingtai\/?"[^>]*>找养老机构<\/a>/);
   assert.doesNotMatch(header, /href="(?:\/eldercare)?\/guangzhou\/jigou\/?"/);
   assert.doesNotMatch(header, /<button[^>]*disabled/);
-  assert.doesNotMatch(header, /<form\b/);
+  assert.match(header, /<form\b[^>]*action="(?:\/eldercare)?\/quanguo\/pingtai\/?"/);
+});
+
+test('header offers screenshot-style national quick links and category menus', () => {
+  const header = renderToStaticMarkup(withNavigation('/', '',
+    React.createElement(SiteHeader, { publishedAt: catalog.source.publishedAt })));
+  assert.match(header, /<nav aria-label="快捷入口"/);
+  assert.match(header, /aria-controls="site-mega-menu"/);
+  assert.match(header, /<nav aria-label="主导航"[\s\S]*?>[\s\S]*养老院[\s\S]*养老服务[\s\S]*政策保障[\s\S]*用户服务/);
+  for (const href of ['/quanguo/pingtai', '/quanguo/shangmen', '/quanguo/changhuxian',
+    '/quanguo/jiage', '/quanguo/bangdan', '/quanguo/laiyuan', '/corrections']) {
+    assert.ok(header.includes('href="' + href + '"'), href);
+  }
+  assert.doesNotMatch(header, /东营|移动端 App|用户中心|href="#"/);
+  const quick = header.match(/<nav aria-label="快捷入口"[\s\S]*?<\/nav>/)?.[0] ?? '';
+  assert.ok(quick.indexOf('id="site-mega-menu"') > quick.indexOf('aria-controls="site-mega-menu"'));
+  assert.ok(quick.indexOf('id="site-mega-menu"') < quick.indexOf('全国机构'));
+  const mobile = header.match(/<nav aria-label="移动端导航"[\s\S]*?<\/nav>/)?.[0] ?? '';
+  for (const href of ['/zhengce', '/quanguo/banshi', '/corrections']) {
+    assert.ok(mobile.includes('href="' + href + '"'), href);
+  }
 });
 
 test('portal header opens all four national prototype categories in order', () => {
@@ -180,12 +199,12 @@ test('portal header opens all four national prototype categories in order', () =
   assert.ok(header.includes('href="/quanguo/zhuti"'));
 });
 
-test('the four opened pages keep their own category active without an unrelated header search', () => {
+test('the four opened pages keep their own category active alongside the nationwide search', () => {
   for (const [route, label] of [['shangmen', '找上门服务'], ['changhuxian', '长护险指南'], ['jiage', '价格参考'], ['bangdan', '榜单']]) {
     const html = renderToStaticMarkup(withNavigation('/quanguo/' + route + '/', '',
       React.createElement(SiteHeader, { publishedAt: catalog.source.publishedAt })));
     assert.match(html, new RegExp('<a\\b(?=[^>]*aria-current="page")(?=[^>]*href="/quanguo/' + route + '")[^>]*>' + label + '</a>'));
-    assert.doesNotMatch(html, /<form\b/);
+    assert.match(html, /<form\b[^>]*action="(?:\/eldercare)?\/quanguo\/pingtai\/?"/);
   }
 });
 

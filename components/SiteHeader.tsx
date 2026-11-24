@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { logicalPathname, sitePath } from '@/lib/site-path';
 import { Logo } from './DirectoryUi';
 
@@ -14,6 +14,9 @@ const primaryNav = [
   { href: '/quanguo/jiage/', name: '价格参考' },
   { href: '/quanguo/bangdan/', name: '榜单' },
   { href: '/rules/', name: '方法论' },
+  { href: '/zhengce/', name: '养老政策' },
+  { href: '/quanguo/banshi/', name: '机构办事指南' },
+  { href: '/corrections/', name: '资料纠错' },
 ];
 
 const supportNav = [
@@ -22,6 +25,35 @@ const supportNav = [
   { href: '/quanguo/zhuti/', name: '登记主体' },
   { href: '/rules/', name: '来源与方法' },
 ];
+
+const categoryGroups = [
+  { id: 'institutions', name: '养老院', links: [
+    { href: '/quanguo/pingtai/', name: '找养老机构' },
+    { href: '/quanguo/cankao/', name: '企查查机构线索' },
+  ] },
+  { id: 'services', name: '养老服务', links: [
+    { href: '/quanguo/shangmen/', name: '找上门服务' },
+  ] },
+  { id: 'policy', name: '政策保障', links: [
+    { href: '/zhengce/', name: '养老政策' },
+    { href: '/quanguo/changhuxian/', name: '长护险指南' },
+    { href: '/quanguo/banshi/', name: '机构办事指南' },
+  ] },
+  { id: 'prices', name: '价格参考', links: [
+    { href: '/quanguo/jiage/', name: '价格参考' },
+  ] },
+  { id: 'ranking', name: '榜单', links: [
+    { href: '/quanguo/bangdan/', name: '榜单' },
+  ] },
+  { id: 'sources', name: '信源资料', links: [
+    { href: '/quanguo/laiyuan/', name: '官方来源' },
+    { href: '/quanguo/zhuti/', name: '登记主体' },
+    { href: '/rules/', name: '方法论' },
+  ] },
+  { id: 'help', name: '用户服务', links: [
+    { href: '/corrections/', name: '资料纠错' },
+  ] },
+] as const;
 
 export function headerSearchHref(searchRoute: string, q: string, currentPathname: string, currentSearch: string): string {
   const live = new URLSearchParams(currentSearch);
@@ -53,71 +85,145 @@ export function headerSearchHref(searchRoute: string, q: string, currentPathname
   return searchRoute + (next.size ? '?' + next : '');
 }
 
-function SiteHeaderContent({ publishedAt, searchKeyword, showMcaPreview }: { publishedAt: string; searchKeyword: string; showMcaPreview: boolean }) {
+function SiteHeaderContent({ searchKeyword, showMcaPreview }: { publishedAt: string; searchKeyword: string; showMcaPreview: boolean }) {
   const pathname = logicalPathname(usePathname());
-  const isHomeRoute = pathname === '/';
   const isServiceRoute = pathname === '/guangzhou/shangmen' || pathname.startsWith('/guangzhou/shangmen/');
   const isProvinceRoute = pathname === '/guangdong/jigou' || pathname.startsWith('/guangdong/jigou/');
   const isNationalOfficialRoute = pathname === '/quanguo/laiyuan' || pathname.startsWith('/quanguo/laiyuan/');
   const isMcaPreviewRoute = pathname === '/quanguo/mca-preview' || pathname.startsWith('/quanguo/mca-preview/');
-  const isMcaPublicRoute = pathname === '/quanguo/pingtai' || pathname.startsWith('/quanguo/pingtai/');
   const isInstitutionReferenceRoute = pathname === '/quanguo/cankao' || pathname.startsWith('/quanguo/cankao/');
   const isQccRoute = pathname === '/guangdong/zhuti' || pathname.startsWith('/guangdong/zhuti/');
   const isNationalQccRoute = pathname === '/quanguo/zhuti' || pathname.startsWith('/quanguo/zhuti/');
-  const ownsSearch = ['/guangzhou/jigou', '/guangzhou/shangmen', '/guangdong/jigou', '/guangdong/zhuti', '/quanguo/cankao', '/quanguo/laiyuan', '/quanguo/zhuti', '/quanguo/pingtai', '/quanguo/shangmen', '/quanguo/changhuxian', '/quanguo/jiage', '/quanguo/bangdan'].includes(pathname.replace(/\/$/, '')) || isMcaPreviewRoute;
-  const searchRoute = isServiceRoute ? '/guangzhou/shangmen/' : isMcaPublicRoute ? '/quanguo/pingtai/' : isProvinceRoute || isNationalOfficialRoute ? '/quanguo/laiyuan/' : isQccRoute || isNationalQccRoute ? '/quanguo/zhuti/' : '/quanguo/cankao/';
-  const scopeLabel = isMcaPreviewRoute ? '全国平台已观察记录 · 本机预览' : isMcaPublicRoute ? '民政部平台部分采集快照' : isHomeRoute || isInstitutionReferenceRoute ? '全国机构来源线索' : isNationalOfficialRoute || isProvinceRoute ? '地方官方来源记录' : isNationalQccRoute || isQccRoute ? '登记主体候选' : isServiceRoute ? '广州养老服务记录' : '机构档案';
+  const searchRoute = isServiceRoute ? '/guangzhou/shangmen/' : isProvinceRoute || isNationalOfficialRoute ? '/quanguo/laiyuan/' : isQccRoute || isNationalQccRoute ? '/quanguo/zhuti/' : isInstitutionReferenceRoute ? '/quanguo/cankao/' : '/quanguo/pingtai/';
+  const searchLabel = isServiceRoute ? '搜索养老服务记录' : isProvinceRoute || isNationalOfficialRoute ? '搜索官方来源记录' : isQccRoute || isNationalQccRoute ? '搜索登记主体' : isInstitutionReferenceRoute ? '搜索机构线索' : '搜索全国养老机构';
+  const searchPlaceholder = isQccRoute || isNationalQccRoute ? '输入登记主体名称' : '输入机构名称或所在地区';
   const router = useRouter();
   const [q, setQ] = useState(searchKeyword);
-  const navLink = (item: { href?: string; name: string }, secondary: boolean) => {
-    const current = item.href !== undefined && (item.href === '/' ? pathname === '/' :
-      (item.href === '/quanguo/pingtai/' && isMcaPreviewRoute) ||
-      pathname === item.href.slice(0, -1) || pathname.startsWith(item.href));
-    const className = secondary
-      ? 'flex min-h-11 items-center justify-between gap-2 rounded-md px-3 py-2.5 no-underline ' + (current ? 'bg-brand-tint font-semibold text-brand-ink' : item.href ? 'text-ink hover:bg-page' : 'text-sub')
-      : 'inline-flex min-h-12 shrink-0 items-center gap-1 whitespace-nowrap border-b-[3px] px-1 pt-[3px] text-[15px] font-medium no-underline sm:text-[17px] ' + (current ? 'border-brand font-semibold text-brand-dark' : item.href ? 'border-transparent text-brand-dark hover:border-brand hover:text-brand-dark' : 'border-transparent text-sub');
-    if (!item.href) return <span key={item.name} aria-disabled="true" className={className}>{item.name}<span className="text-[11px] font-normal">待开放</span></span>;
-    return <Link key={item.href} href={item.href} aria-current={current ? 'page' : undefined} className={className}>{item.name}</Link>;
-  };
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const headerRef = useRef<HTMLElement>(null);
+  const triggerRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const secondaryNav = showMcaPreview ? [...supportNav, { href: '/quanguo/mca-preview/', name: '全国平台本机预览' }] : supportNav;
-  return <header className={isHomeRoute ? 'relative z-20 border-b border-transparent bg-transparent' : 'relative z-20 border-b border-line bg-white shadow-[0_1px_0_rgba(17,32,40,0.04)]'}>
-    <div className={isHomeRoute ? 'bg-transparent' : 'portal-header-surface'}>
-      <div className="container-site flex min-h-[82px] items-center justify-between gap-5 py-3">
-        <div className="flex min-w-0 items-center gap-2 sm:gap-3"><div className="shrink-0 origin-left xl:scale-[1.15]"><Logo /></div><span className="inline-flex whitespace-nowrap rounded-md border border-brand-line bg-brand-tint px-2 py-1 text-xs text-brand-ink">全国<span className="hidden sm:inline"> · 分批收录</span></span></div>
-        <div className="hidden items-center justify-end gap-5 xl:flex">
-          <span className="whitespace-nowrap text-[12px] text-sub">独立资料整理</span>
-          <nav aria-label="本站资料入口" className="flex flex-wrap justify-end gap-x-4 gap-y-1 text-[13px]">{supportNav.map(item => <Link key={item.href} href={item.href} className="whitespace-nowrap text-brand-ink underline-offset-4 hover:underline">{item.name}</Link>)}{showMcaPreview && <Link href="/quanguo/mca-preview/">本机预览</Link>}<a href="https://yanglao.mca.gov.cn/#/homePage" target="_blank" rel="noopener noreferrer" className="whitespace-nowrap text-brand-ink underline-offset-4 hover:underline">民政部平台 ↗</a></nav>
-        </div>
-      <details className="relative xl:hidden" onKeyDown={event => {
-        if (event.key !== 'Escape' || event.nativeEvent.isComposing || !event.currentTarget.open) return;
-        event.preventDefault();
-        event.currentTarget.open = false;
-        event.currentTarget.querySelector('summary')?.focus();
-      }}>
-        <summary className="flex min-h-11 cursor-pointer list-none items-center rounded-md border border-brand-line bg-white/80 px-3 text-sm font-semibold text-brand-dark [&::-webkit-details-marker]:hidden">资料</summary>
-        <nav aria-label="本站资料入口" className="absolute right-0 top-full z-30 mt-2 grid w-[min(86vw,320px)] max-h-[75vh] gap-1 overflow-y-auto rounded-md border border-brand-line bg-white p-3 shadow-xl">{secondaryNav.map(item => navLink(item, true))}</nav>
-      </details>
+  useEffect(() => {
+    if (!openMenu) return;
+    const closeOutside = (event: PointerEvent) => {
+      const target = event.target as Node;
+      const panel = document.getElementById(openMenu === 'all' ? 'site-mega-menu' : 'site-menu-' + openMenu);
+      if (!panel?.contains(target) && !triggerRefs.current[openMenu]?.contains(target)) setOpenMenu(null);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.isComposing) return;
+      const trigger = triggerRefs.current[openMenu];
+      if (!trigger?.getClientRects().length) { setOpenMenu(null); return; }
+      event.preventDefault();
+      setOpenMenu(null);
+      requestAnimationFrame(() => trigger?.focus());
+    };
+    const desktop = window.matchMedia('(min-width: 1024px)');
+    const closeOnViewportChange = () => setOpenMenu(null);
+    document.addEventListener('pointerdown', closeOutside);
+    document.addEventListener('keydown', closeOnEscape);
+    desktop.addEventListener('change', closeOnViewportChange);
+    return () => {
+      document.removeEventListener('pointerdown', closeOutside);
+      document.removeEventListener('keydown', closeOnEscape);
+      desktop.removeEventListener('change', closeOnViewportChange);
+    };
+  }, [openMenu]);
+  const isCurrent = (href: string) => href === '/' ? pathname === '/' :
+    (href === '/quanguo/pingtai/' && isMcaPreviewRoute) ||
+    pathname === href.slice(0, -1) || pathname.startsWith(href);
+  const navLink = (item: { href: string; name: string }, mobile = false) => {
+    const current = isCurrent(item.href);
+    return <Link key={item.href} href={item.href} aria-current={current ? 'page' : undefined}
+      onClick={event => {
+        setOpenMenu(null);
+        if (mobile) { const details = event.currentTarget.closest('details'); if (details) details.open = false; }
+      }}
+      className={mobile
+        ? 'block min-h-11 rounded px-4 py-2.5 text-[15px] no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#378821] ' + (current ? 'bg-[#eaf4e6] font-semibold text-[#246719]' : 'text-[#263d29] hover:bg-[#f3f8f0]')
+        : 'block min-h-10 px-4 py-2.5 text-[14px] no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[#287a23] ' + (current ? 'bg-[#edf7e9] font-semibold text-[#246719]' : 'text-[#33443a] hover:bg-[#f3f8f0] hover:text-[#287a23]')}>{item.name}</Link>;
+  };
+  const quickLinkClass = 'inline-flex min-h-9 items-center gap-1.5 rounded-[4px] bg-[#0e8521] px-3 text-[13px] font-semibold text-white no-underline hover:bg-[#086d19] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0e8521]';
+  return <header ref={headerRef} onBlur={event => {
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpenMenu(null);
+  }} className="relative z-30 w-full bg-white">
+    <div className="hidden border-b border-[#e8ece8] bg-white lg:block">
+      <div className="relative mx-auto flex h-[70px] w-full max-w-[1200px] items-center justify-between gap-5 px-5">
+        <nav aria-label="快捷入口" className="flex items-center gap-2.5">
+          <Link href="/" aria-current={pathname === '/' ? 'page' : undefined} className={quickLinkClass}>首页 <span aria-hidden="true">⌂</span></Link>
+          <button type="button" ref={node => { triggerRefs.current.all = node; }} aria-expanded={openMenu === 'all'} aria-controls="site-mega-menu"
+            onClick={() => setOpenMenu(openMenu === 'all' ? null : 'all')} className={quickLinkClass + (openMenu === 'all' ? ' bg-[#086d19]' : '')}>导航 <span aria-hidden="true">▦</span></button>
+          <div id="site-mega-menu" className={(openMenu === 'all' ? 'grid' : 'hidden') + ' absolute inset-x-5 top-full z-50 max-h-[calc(100svh-70px)] grid-cols-4 gap-x-5 gap-y-6 overflow-y-auto rounded-b-md border border-[#e4eae3] bg-white p-6 shadow-[0_18px_38px_rgba(24,48,28,0.2)] xl:grid-cols-7'}>
+            {categoryGroups.map(group => <div key={group.id} className="min-w-0">
+              <h2 className="m-0 border-b border-[#e6eee3] pb-2 text-[15px] font-bold text-[#17261d]">{group.name}</h2>
+              <ul className="m-0 mt-2 list-none p-0">{group.links.map(item => <li key={item.href}>{navLink(item)}</li>)}
+                {group.id === 'sources' && showMcaPreview && <li>{navLink({ href: '/quanguo/mca-preview/', name: '全国平台本机预览' })}</li>}
+              </ul>
+            </div>)}
+            <button type="button" onClick={() => { setOpenMenu(null); triggerRefs.current.all?.focus(); }} aria-label="关闭网站导航" className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-full bg-[#f2f5f1] text-xl text-[#536554] hover:bg-[#e5ede2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#287a23]">×</button>
+          </div>
+          <Link href="/quanguo/pingtai/" className={quickLinkClass}>全国机构 <span aria-hidden="true">⌕</span></Link>
+          <Link href="/quanguo/laiyuan/" className={quickLinkClass}>官方来源 <span aria-hidden="true">↗</span></Link>
+        </nav>
+        <nav aria-label="本站资料入口" className="flex items-center gap-2.5">
+          <Link href="/quanguo/changhuxian/" className={quickLinkClass}>长护险指南</Link>
+          <Link href="/corrections/" className={quickLinkClass}>资料纠错</Link>
+          <a href="https://yanglao.mca.gov.cn/#/homePage" target="_blank" rel="noopener noreferrer" className={quickLinkClass}>民政部平台 ↗</a>
+        </nav>
       </div>
     </div>
-    <div className={isHomeRoute ? 'border-t border-line/70 bg-transparent' : 'border-t border-line bg-brand-tint/40'}><div className="container-site">
-      <nav aria-label="主导航" className="flex w-full items-center gap-5 overflow-x-auto overscroll-x-contain whitespace-nowrap sm:gap-7 xl:justify-between">{primaryNav.map(item => navLink(item, false))}</nav>
-    </div></div>
-    {!isHomeRoute && !ownsSearch && <div className="border-t border-hair bg-brand-tint/40">
-      <div className="container-site flex flex-wrap items-center gap-x-5 gap-y-2 py-3">
-        <span className="text-[13px] font-medium text-brand-ink">{scopeLabel}{pathname.startsWith('/guangzhou/') ? <> · 名单 <time dateTime={publishedAt}>{publishedAt}</time></> : null}</span>
-        <form action={sitePath(searchRoute)} method="get" role="search" aria-label={isServiceRoute ? '养老服务记录搜索' : isMcaPublicRoute ? '民政部平台采集快照搜索' : isProvinceRoute || isNationalOfficialRoute ? '官方来源记录搜索' : isQccRoute || isNationalQccRoute ? '登记主体候选搜索' : '全国机构线索搜索'} className="flex min-w-[240px] flex-[1_1_350px] overflow-hidden rounded-md border border-line bg-white focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/20" onSubmit={event => {
-          event.preventDefault();
-          router.push(headerSearchHref(searchRoute, q, logicalPathname(window.location.pathname), window.location.search));
-        }}>
-          <label htmlFor="site-q" className="sr-only">{isMcaPublicRoute ? '搜索民政部平台采集快照' : isProvinceRoute || isNationalOfficialRoute ? '搜索官方来源记录' : isQccRoute || isNationalQccRoute ? '搜索登记主体候选' : '搜索全国机构线索，进入后选择省份'}</label>
-          <input id="site-q" name="q" type="search" value={q} onChange={event => setQ(event.target.value)} maxLength={80} placeholder={isMcaPublicRoute ? '输入平台机构名称或地区' : isProvinceRoute || isNationalOfficialRoute ? '搜索来源中的机构名称' : isQccRoute || isNationalQccRoute ? '搜索登记主体名称' : '输入机构名称或地区'} className="h-11 min-w-0 flex-1 border-0 px-3 text-[15px] outline-none" />
-          <button type="submit" className="min-w-[72px] bg-brand px-4 font-semibold text-white hover:bg-brand-dark">搜索</button>
+    <div className="border-b border-[#e6ebe3]">
+      <div className="mx-auto grid w-full max-w-[1200px] gap-3 px-4 py-3 sm:px-5 lg:min-h-[60px] lg:grid-cols-[300px_minmax(0,1fr)] lg:items-center lg:gap-8 lg:py-1.5">
+        <div className="flex min-w-0 items-center justify-between"><Logo /><span className="hidden whitespace-nowrap border-l border-[#dce6da] pl-3 text-xs text-[#5c785a] sm:inline lg:hidden">全国</span></div>
+        <form action={sitePath(searchRoute)} method="get" role="search" aria-label={searchLabel}
+          className="flex h-12 min-w-0 w-full overflow-hidden rounded-[3px] border border-[#e4e9e4] bg-[#f4f5f4] focus-within:border-[#378821] focus-within:ring-2 focus-within:ring-[#378821]/20 lg:ml-auto lg:max-w-[500px]"
+          onSubmit={event => {
+            event.preventDefault();
+            router.push(headerSearchHref(searchRoute, q, logicalPathname(window.location.pathname), window.location.search));
+          }}>
+          <label htmlFor="site-q" className="sr-only">{searchLabel}</label>
+          <input id="site-q" name="q" type="search" value={q} onChange={event => setQ(event.target.value)} maxLength={80} placeholder={searchPlaceholder}
+            className="h-full min-w-0 flex-1 border-0 bg-transparent px-4 text-[15px] text-[#25382b] outline-none placeholder:text-[#9aa59b]" />
+          <button type="submit" aria-label="搜索" className="flex min-w-[72px] items-center justify-center bg-[#0e8521] text-white hover:bg-[#086d19] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-white"><svg aria-hidden="true" width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></svg><span className="sr-only">搜索</span></button>
         </form>
       </div>
-    </div>}
+    </div>
+    <div className="bg-[#2e861f] text-white lg:bg-white lg:pb-2.5">
+      <div className="mx-auto w-full max-w-[1200px] px-4 sm:px-5">
+        <nav aria-label="主导航" className="relative hidden min-h-[50px] rounded-[4px] bg-[#2e861f] lg:grid lg:grid-cols-8">
+          <Link href="/" aria-current={pathname === '/' ? 'page' : undefined} style={pathname === '/' ? { color: '#173419' } : undefined} className={'flex min-h-[50px] items-center justify-center text-[16px] font-semibold text-white no-underline hover:bg-[#67ad13] hover:text-[#173419] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-white ' + (pathname === '/' ? 'bg-[#67ad13]' : '')}>首页</Link>
+          {categoryGroups.map((group, index) => <div key={group.id} className="relative min-w-0">
+            <button type="button" ref={node => { triggerRefs.current[group.id] = node; }} aria-expanded={openMenu === group.id} aria-controls={'site-menu-' + group.id}
+              onClick={() => setOpenMenu(openMenu === group.id ? null : group.id)}
+              style={openMenu === group.id || group.links.some(item => isCurrent(item.href)) ? { color: '#173419' } : undefined}
+              className={'flex min-h-[50px] w-full items-center justify-center gap-1.5 px-2 text-[16px] font-semibold text-white hover:bg-[#67ad13] hover:text-[#173419] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-white ' + (openMenu === group.id || group.links.some(item => isCurrent(item.href)) ? 'bg-[#67ad13]' : '')}>
+              {group.name}<span aria-hidden="true" className="text-xs">⌄</span>
+            </button>
+            <div id={'site-menu-' + group.id} className={(openMenu === group.id ? 'block' : 'hidden') + ' absolute top-full z-40 min-w-[205px] rounded-b-md border border-[#e2e9df] bg-white py-2 shadow-[0_12px_24px_rgba(20,45,25,0.18)] ' + (index >= 4 ? 'right-0' : 'left-0')}>
+              {group.links.map(item => navLink(item))}
+            </div>
+          </div>)}
+        </nav>
+        <details className="lg:hidden" onKeyDown={event => {
+          if (event.key !== 'Escape' || event.nativeEvent.isComposing || !event.currentTarget.open) return;
+          event.preventDefault();
+          event.currentTarget.open = false;
+          event.currentTarget.querySelector('summary')?.focus();
+        }}>
+          <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-white [&::-webkit-details-marker]:hidden">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 6h16M4 12h16M4 18h16" /></svg>网站导航
+          </summary>
+          <div className="grid max-h-[70svh] gap-3 overflow-y-auto border-t border-white/20 bg-white p-2 text-[#263d29] shadow-md">
+            <nav aria-label="移动端导航" className="grid gap-0.5">{primaryNav.map(item => navLink(item, true))}</nav>
+            <nav aria-label="移动端资料入口" className="grid gap-0.5 border-t border-[#e7eee5] pt-2">{secondaryNav.map(item => navLink(item, true))}
+              <a href="https://yanglao.mca.gov.cn/#/homePage" target="_blank" rel="noopener noreferrer" className="block min-h-11 rounded px-4 py-2.5 text-[15px] text-[#263d29] no-underline hover:bg-[#f3f8f0]">民政部平台 ↗</a>
+            </nav>
+          </div>
+        </details>
+      </div>
+    </div>
   </header>;
 }
-
 function SiteHeaderWithParams({ publishedAt, showMcaPreview }: { publishedAt: string; showMcaPreview: boolean }) {
   const pathname = usePathname();
   const searchKeyword = useSearchParams().get('q') ?? '';

@@ -65,6 +65,21 @@ test('CSV 详情显示真实值、待刷新提醒和本地无时区采集时间�
   assert.match(html, /能力评估[\s\S]*上门评估费（元）[\s\S]*原值为 0，不代表免费/);
   assert.doesNotMatch(html, /已在营|风险评级|图片记录|images_json/);
   assert.match(html, /<details[\s\S]*risk_level[\s\S]*03[\s\S]*<\/details>/);
+  assert.match(html, /报告资料错误/);
+  assert.match(html, /issues\/new\?template=institution-correction.yml/);
+});
+
+test('机构详情以正文和联系核对侧栏组织，章节导航位于概况后', () => {
+  const html = renderToStaticMarkup(React.createElement(McaCatalogDetailView, { record, detail: detail(), manifest }));
+  const chapterNav = html.indexOf('aria-label="机构详情章节"');
+  const main = html.indexOf('aria-label="机构资料正文"');
+  const aside = html.indexOf('aria-label="机构联系与核对"');
+  assert.ok(chapterNav > 0 && main > chapterNav && aside > main);
+  assert.match(html.slice(main, aside), /id="mca-public-basic"/);
+  assert.match(html.slice(main, aside), /id="mca-public-source"/);
+  assert.match(html.slice(aside), /id="mca-public-contact"/);
+  assert.match(html, /href="#mca-public-fees"/);
+  assert.match(html, /href="#mca-public-contact"/);
 });
 
 test('CSV 缺失、零值和长文本原样保留', () => {

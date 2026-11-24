@@ -6,6 +6,7 @@ import { mapMcaCatalogDisplay, type McaCatalogDisplayDto } from '@/lib/mca-catal
 import type { McaCatalogCsvDetail, McaCatalogIndexRecord, McaCatalogManifest } from '@/lib/mca-catalog-types';
 import { institutionArticleHref, type InstitutionArticleSummary } from '@/lib/institution-articles';
 import { sitePath } from '@/lib/site-path';
+import { correctionIssueHref } from '@/lib/correction-channel';
 import { McaDetailReturnLink } from './McaDetailReturnLink';
 
 function valueText<T>(field: McaPreviewResolved<T>, format: (value: T) => string): string {
@@ -78,9 +79,9 @@ const navItems = [
   { id: 'mca-public-fees', label: '床位与收费' },
   { id: 'mca-public-basic', label: '机构介绍' },
   { id: 'mca-public-service', label: '服务信息' },
-  { id: 'mca-public-contact', label: '联系核对' },
   { id: 'mca-public-articles', label: '相关文章' },
   { id: 'mca-public-source', label: '来源资料' },
+  { id: 'mca-public-contact', label: '联系核对' },
 ] as const;
 
 export function McaPublicDetailView({ record, detail, manifest, articles = [] }: {
@@ -100,25 +101,39 @@ function McaDetailContent({ dto, articles }: { dto: McaPublicDetailDisplayDto | 
   const csvSource = 'sourceKind' in source ? source : null;
   const observedSource = 'sourceKind' in source ? null : source;
   const monthlyTotal = dto.monthlyFees.find(item => item.code === '04')?.range;
-  const nav = [navItems[0], navItems[1], navItems[2], ...(dto.hasSubServices ? [{ id: 'mca-public-subservices', label: '其他服务' }] : []), navItems[3], ...(articles.length ? [navItems[4]] : []), navItems[5]];
+  const hasMonthlyPrice = monthlyTotal?.state === 'observed' && !!monthlyTotal.value && monthlyTotal.value[0] > 0;
+  const monthlyPriceText = hasMonthlyPrice
+    ? monthlyTotal.value![0].toLocaleString('zh-CN') + ' 元/月起'
+    : monthlyTotal?.state === 'observed' && monthlyTotal.value?.[0] === 0
+      ? '来源含原值 0，请核对'
+      : monthlyTotal ? valueText(monthlyTotal, range => moneyRange(range, '元/月')) : '采集快照未提供';
+  const nav = [navItems[0], navItems[1], navItems[2], ...(dto.hasSubServices ? [{ id: 'mca-public-subservices', label: '其他服务' }] : []), ...(articles.length ? [navItems[3]] : []), navItems[4], navItems[5]];
 
   return <div className="institution-detail-page min-w-0 bg-page">
-    <div className="border-b border-line bg-white">
-      <div className="container-site pb-6 pt-4 sm:pb-8 sm:pt-5">
+    <div className="bg-page">
+      <div className="mx-auto w-full max-w-[1200px] px-4 pb-5 pt-4 sm:px-6 sm:pt-5">
         <nav aria-label="面包屑" className="mb-5 flex flex-wrap gap-2 text-[13px] text-sub">
-          <a href={sitePath('/quanguo/pingtai/')} className="text-brand">找养老机构</a><span aria-hidden="true">›</span><span className="min-w-0 break-words">{dto.name}</span>
+          <a href={sitePath('/quanguo/pingtai/')} className="text-[#246719]">找养老机构</a><span aria-hidden="true">›</span><span className="min-w-0 break-words">{dto.name}</span>
         </nav>
-        <header id="mca-public-overview" className="border-l-[3px] border-brand pl-4 sm:pl-5">
+        <header id="mca-public-overview" className="rounded-card border border-line bg-white p-5 shadow-card sm:p-7">
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-8">
             <div className="min-w-0">
-              <p className="m-0 text-[12px] font-semibold tracking-wide text-brand">全国养老服务信息平台 · 机构资料快照</p>
-              <h1 className="mb-0 mt-2 break-words text-[clamp(1.6rem,3.2vw,2.25rem)] font-semibold leading-tight text-ink">{dto.name}</h1>
+              <p className="m-0 text-[12px] font-semibold tracking-wide text-[#246719]">全国养老服务信息平台 · 机构资料快照</p>
+              <h1 className="mb-0 mt-2 break-words text-[clamp(1.6rem,3.2vw,2.25rem)] font-bold leading-tight text-ink">{dto.name}</h1>
               <p className="mb-0 mt-3 break-words text-sm leading-6 text-body">{valueText(overview.region, value => value.replaceAll('/', ' / '))}{overview.facilityType.state === 'observed' && <> · {overview.facilityType.value}</>}</p>
               <p className="mb-0 mt-1 break-words text-sm leading-6 text-ink"><span className="text-body">地址：</span>{valueText(overview.address, String)}</p>
             </div>
-            <a href={source.sourcePage} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 w-full shrink-0 items-center justify-center rounded-md border border-brand-line bg-brand-tint px-4 text-sm font-semibold no-underline hover:bg-white sm:w-auto">打开官网原页核对 ↗</a>
+            <div className="flex shrink-0 flex-col items-start gap-3 md:items-end md:text-right">
+              <div><span className="block text-xs text-sub">月费参考 · 历史快照</span><strong className={'mt-1 block break-words font-semibold tabular-nums ' + (hasMonthlyPrice ? 'text-[clamp(1.5rem,3vw,2rem)] text-[#b47713]' : 'text-sm text-body')}>{monthlyPriceText}</strong></div>
+              <a href={source.sourcePage} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 w-full items-center justify-center rounded-sm border border-[#a4c99d] bg-[#f1f8ee] px-4 text-sm font-semibold text-[#246719] no-underline hover:bg-white sm:w-auto">打开官网原页核对 ↗</a>
+            </div>
           </div>
-          <dl aria-label="机构关键事实" className="mb-0 mt-4 flex flex-wrap gap-x-7 gap-y-2 border-t border-hair pt-3 text-sm"><div className="flex gap-2"><dt className="text-body">平台列示床位</dt><dd className="m-0 font-semibold tabular-nums">{valueText(capacity.total, numberText)}</dd></div><div className="flex gap-2"><dt className="text-body">月费参考</dt><dd className="m-0 font-semibold tabular-nums">{monthlyTotal?.state === 'observed' && monthlyTotal.value ? monthlyTotal.value[0] === 0 ? '来源含原值 0，请核对' : monthlyTotal.value[0].toLocaleString('zh-CN') + ' 元/月起' : monthlyTotal ? valueText(monthlyTotal, range => moneyRange(range, '元/月')) : '采集快照未提供'}</dd></div></dl>
+          <dl aria-label="机构关键事实" className="mb-0 mt-5 grid gap-x-6 gap-y-3 border-y border-hair py-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
+            <div className="min-w-0"><dt className="text-sub">设施类型</dt><dd className="m-0 mt-1 break-words font-medium">{valueText(overview.facilityType, String)}</dd></div>
+            <div className="min-w-0"><dt className="text-sub">平台列示床位</dt><dd className="m-0 mt-1 font-semibold tabular-nums">{valueText(capacity.total, numberText)}</dd></div>
+            <div className="min-w-0"><dt className="text-sub">机构面积</dt><dd className="m-0 mt-1 font-medium tabular-nums">{valueText(dto.areaSqm, value => value.toLocaleString('zh-CN') + ' ㎡')}</dd></div>
+            <div className="min-w-0"><dt className="text-sub">联系电话</dt><dd className="m-0 mt-1 break-all font-medium">{overview.contactHref ? <a href={overview.contactHref}>{valueText(overview.contactPhone, String)}</a> : valueText(overview.contactPhone, String)}</dd></div>
+          </dl>
           <p className="mb-0 mt-3 text-xs leading-5 text-sub">{csvSource ? <>采集器记录时间：{csvSource.csvUpdatedAtLocal.replace('T', ' ')}（本地时间，时区未提供）</> : observedSource && <>详情采集于 <time dateTime={observedSource.detailObservedAtUtc.earliest}>{observedSource.detailObservedAtUtc.earliest.slice(0, 10)}</time>{observedSource.detailObservedAtUtc.earliest.slice(0, 10) !== observedSource.detailObservedAtUtc.latest.slice(0, 10) && <>—<time dateTime={observedSource.detailObservedAtUtc.latest}>{observedSource.detailObservedAtUtc.latest.slice(0, 10)}</time></>}</>}；历史快照不代表当前在营、空床或最新报价。</p>
         </header>
       </div>
@@ -127,12 +142,14 @@ function McaDetailContent({ dto, articles }: { dto: McaPublicDetailDisplayDto | 
     {observedSource && observedSource.conflictLabels.length > 0 && <div role="alert" className="border-b border-caution-line bg-caution-bg"><div className="container-site py-3 text-sm text-caution">索引字段观察冲突：{observedSource.conflictLabels.join('、')}。请到官网核对，本页不替来源选定冲突值。</div></div>}
     {csvSource?.collectorStatus === 'stale' && <div role="alert" className="border-b border-caution-line bg-caution-bg"><div className="container-site py-3 text-sm text-caution">资料待刷新：采集器将此条标记为 stale。这不是机构停业或注销状态，请打开官网原页核对。</div></div>}
 
-    <div className="container-site grid min-w-0 gap-5 py-5 lg:grid-cols-[190px_minmax(0,1fr)] lg:items-start lg:gap-8 lg:py-8">
-      <nav aria-label="本页目录" className="sticky top-0 z-10 flex min-w-0 gap-4 overflow-x-auto border-b border-line bg-page py-2 text-sm font-medium whitespace-nowrap lg:top-5 lg:flex-col lg:gap-0 lg:overflow-visible lg:rounded-md lg:border lg:bg-white lg:p-3">
-        {nav.map(item => <a key={item.id} href={'#' + item.id} className="inline-flex min-h-11 shrink-0 items-center border-b-2 border-transparent px-1 no-underline hover:border-brand lg:w-full lg:border-b-0 lg:rounded-md lg:px-3 lg:hover:bg-brand-tint">{item.label}</a>)}
-      </nav>
+    <nav aria-label="机构详情章节" className="border-b border-line bg-white">
+      <div className="mx-auto flex w-full max-w-[1200px] gap-6 overflow-x-auto px-4 text-sm font-medium whitespace-nowrap sm:px-6">
+        {nav.map(item => <a key={item.id} href={'#' + item.id} className="inline-flex min-h-12 shrink-0 items-center border-b-[3px] border-transparent px-1 text-ink no-underline hover:border-[#378821] hover:text-[#246719] focus-visible:border-[#378821]">{item.label}</a>)}
+      </div>
+    </nav>
 
-      <div className="min-w-0 space-y-5">
+    <div className="mx-auto grid w-full max-w-[1200px] min-w-0 gap-6 px-4 py-5 sm:px-6 lg:grid-cols-[minmax(0,760px)_minmax(280px,1fr)] lg:items-start lg:py-8">
+      <section aria-label="机构资料正文" className="min-w-0 space-y-5">
         <section id="mca-public-fees" className="scroll-mt-20 rounded-card border border-line bg-white p-5 shadow-card sm:p-7">
           <h2 className="m-0 text-xl font-semibold">床位与收费</h2>
           <p className="mb-0 mt-1 text-xs leading-5 text-sub">床位为平台列示数量，不等于当前空床；收费为历史快照，不是本站报价。</p>
@@ -174,21 +191,12 @@ function McaDetailContent({ dto, articles }: { dto: McaPublicDetailDisplayDto | 
           </div>
         </section>}
 
-        <section id="mca-public-contact" className="scroll-mt-20 rounded-card border border-line bg-white p-5 shadow-card sm:p-7">
-          <h2 className="m-0 text-xl font-semibold">联系与核对</h2>
-          <dl className="mb-0 mt-3 border-t border-hair"><FieldRow label="联系人" field={overview.contactName} format={String} />
-            <div className="grid min-w-0 gap-1 border-b border-hair py-3 sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-5"><dt className="text-sm text-body">联系电话</dt><dd className="m-0 break-all text-sm font-medium">{overview.contactHref ? <a href={overview.contactHref}>{valueText(overview.contactPhone, String)}</a> : valueText(overview.contactPhone, String)}</dd></div>
-          </dl>
-          <p className="mb-0 mt-3 text-xs leading-5 text-sub">联系方式来自来源快照；联系前请核对。</p>
-          <p className="mb-0 mt-2 text-xs leading-5 text-sub">{dto.evaluationSummary}</p>
-        </section>
-
         {articles.length > 0 && <section id="mca-public-articles" className="scroll-mt-20 rounded-card border border-line bg-white p-5 shadow-card sm:p-7">
           <h2 className="m-0 text-xl font-semibold">机构相关文章</h2>
           <p className="mb-0 mt-2 text-sm leading-6 text-sub">本站依据注明时点的资料整理文章；文章不替代机构档案，也不证明当前在营、空床或最新报价。</p>
           <ul className="mb-0 mt-4 divide-y divide-hair border-t border-hair pl-0">
             {articles.map(article => <li key={article.slug} className="list-none py-4">
-              <a href={sitePath(institutionArticleHref(source.mcaId, article.slug))} className="block min-h-11 max-w-full break-words py-2.5 text-base font-semibold leading-6 text-brand-ink underline-offset-4 hover:underline">{article.title}</a>
+              <a href={sitePath(institutionArticleHref(source.mcaId, article.slug))} className="block min-h-11 max-w-full break-words py-2.5 text-base font-semibold leading-6 text-[#246719] underline-offset-4 hover:underline">{article.title}</a>
               <p className="mb-0 mt-1 break-words text-sm leading-6 text-body">{article.summary}</p>
               <p className="mb-0 mt-2 break-words text-xs leading-5 text-sub">发布于 <time dateTime={article.publishedAt}>{article.publishedAt}</time> · 资料观察于 <time dateTime={article.evidenceAsOf}>{article.evidenceAsOf}</time></p>
             </li>)}
@@ -204,9 +212,10 @@ function McaDetailContent({ dto, articles }: { dto: McaPublicDetailDisplayDto | 
           {csvSource && <><p className="mb-0 mt-2 break-words text-sm text-body">采集器记录时间（本地时间，时区未提供）：{csvSource.csvUpdatedAtLocal}</p>
             <p className="mb-0 mt-2 text-sm text-sub">CSV 文件日期：{csvSource.csvExportDate} · 采集状态原值：{csvSource.collectorStatus}（不是机构在营状态）</p></>}
           <p className="mb-0 mt-2 text-sm text-body">来源页面：<a href={source.sourcePage} target="_blank" rel="noopener noreferrer">全国养老服务信息平台 ↗</a></p>
+          <p className="mb-0 mt-2 text-sm leading-6 text-body">发现资料有误？<a href={correctionIssueHref(source.mcaId)} target="_blank" rel="noopener noreferrer" className="underlink">报告资料错误 ↗</a>（工单标题提示平台 ID，表单内仍需填写记录定位；需 GitHub 登录，工单公开）。<a href={sitePath('/corrections/')} className="underlink">查看纠错流程 →</a></p>
           <p className="mb-0 mt-4 text-sm text-caution">快照不代表实时在营、实时空床或最新报价；请联系机构并核对官网原页。</p>
           {observedSource ? <details className="rounded-md border border-line bg-page p-4 open:bg-white">
-            <summary className="min-h-10 cursor-pointer font-medium text-brand-ink">来源原值</summary>
+            <summary className="min-h-10 cursor-pointer font-medium text-[#246719]">来源原值</summary>
             <div className="mt-4 border-t border-hair pt-3">
               <p className="mb-0 text-xs leading-5 text-sub">以下保留未释义的原码、原始坐标与完整索引字段，仅供核对；不能据此推断等级、补贴或定位。</p>
               <dl className="mb-0 mt-3"><FieldRow label="星级原码" field={observedSource.starCode} format={String} /><FieldRow label="补贴原码" field={observedSource.subsidyCode} format={String} /><FieldRow label="平台原始坐标（未定位核验）" field={observedSource.pointRaw} format={String} /></dl>
@@ -215,7 +224,7 @@ function McaDetailContent({ dto, articles }: { dto: McaPublicDetailDisplayDto | 
               <dl className="mb-0 mt-2 grid gap-x-8 sm:grid-cols-2">{observedSource.facts.map(fact => <div key={fact.key} className="min-w-0 border-b border-hair py-3 text-sm"><dt className="font-medium">{fact.label}</dt><dd className={'m-0 mt-1 break-words ' + (fact.state === 'conflict' ? 'text-caution' : '')}>{fact.text}</dd>{fact.warning && <dd className="m-0 mt-1 text-xs text-caution">{fact.warning}</dd>}{fact.source && <dd className="m-0 mt-1 text-xs text-sub">{fact.source.channelLabel} · {fact.source.fetchedAtUtc ?? '采集时间未提供'}</dd>}</div>)}</dl>
             </div>
           </details> : csvSource && <details className="rounded-md border border-line bg-page p-4 open:bg-white">
-            <summary className="min-h-10 cursor-pointer font-medium text-brand-ink">来源原值</summary>
+            <summary className="min-h-10 cursor-pointer font-medium text-[#246719]">来源原值</summary>
             <div className="mt-4 border-t border-hair pt-3">
               <p className="mb-0 text-xs leading-5 text-sub">以下保留本次 CSV 中可公开的 51 个字段及原始口径。风险原码不代表本站评级，采集状态不代表机构在营。</p>
               <dl className="mb-0 mt-3 grid gap-x-8 sm:grid-cols-2">{csvSource.rawFields.map(field => <div key={field.key} className="min-w-0 border-b border-hair py-3 text-sm">
@@ -229,7 +238,18 @@ function McaDetailContent({ dto, articles }: { dto: McaPublicDetailDisplayDto | 
             <McaDetailReturnLink />
           </React.Suspense>
         </section>
-      </div>
+      </section>
+      <aside aria-label="机构联系与核对" className="min-w-0 lg:sticky lg:top-5">
+        <section id="mca-public-contact" className="scroll-mt-20 rounded-card border border-line bg-white p-5 shadow-card sm:p-6">
+          <h2 className="m-0 text-xl font-semibold">联系与核对</h2>
+          <dl className="mb-0 mt-3 border-t border-hair">
+            <div className="border-b border-hair py-3"><dt className="text-sm text-body">联系人</dt><dd className="m-0 mt-1 break-words text-sm font-medium">{valueText(overview.contactName, String)}</dd></div>
+            <div className="border-b border-hair py-3"><dt className="text-sm text-body">联系电话</dt><dd className="m-0 mt-1 break-all text-sm font-medium">{overview.contactHref ? <a href={overview.contactHref}>{valueText(overview.contactPhone, String)}</a> : valueText(overview.contactPhone, String)}</dd></div>
+          </dl>
+          <p className="mb-0 mt-3 text-xs leading-5 text-sub">联系方式来自来源快照；联系前请核对。</p>
+          <p className="mb-0 mt-2 text-xs leading-5 text-sub">{dto.evaluationSummary}</p>
+        </section>
+      </aside>
     </div>
   </div>;
 }

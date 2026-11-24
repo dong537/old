@@ -6,16 +6,16 @@ import HomePage from '../app/page';
 
 Object.assign(globalThis, { React });
 
-test('首页服务卡保持原型顺序并开放真实居家上门服务入口', () => {
+test('首页按全国机构主流程展示真实入口和检索', () => {
   const html = renderToStaticMarkup(React.createElement(HomePage));
-  const services = html.slice(html.indexOf('id="service-query"'), html.indexOf('id="online-services"'));
-  const labels = ['民政部平台采集', '喘息服务查询', '日托服务查询', '居家上门服务查询'];
-  for (const label of labels) assert.ok(services.includes(label), label);
+  const entries = html.slice(html.indexOf('aria-label="首页主要入口"'), html.indexOf('aria-label="首页热点服务"'));
+  const labels = ['养老院查询', '机构线索', '官方来源', '上门服务'];
+  for (const label of labels) assert.ok(entries.includes(label), label);
   for (let index = 1; index < labels.length; index++) {
-    assert.ok(services.indexOf(labels[index - 1]) < services.indexOf(labels[index]));
+    assert.ok(entries.indexOf(labels[index - 1]) < entries.indexOf(labels[index]));
   }
-  const homeCard = services.slice(services.indexOf('居家上门服务查询'));
-  assert.match(homeCard, /href="\/quanguo\/shangmen"/);
-  assert.doesNotMatch(homeCard, /尚未开放|建设中/);
-  assert.doesNotMatch(homeCard, /href="[^"]*homeServiceList/);
+  assert.match(entries, /href="\/quanguo\/shangmen\/?"/);
+  assert.match(html, /action="\/quanguo\/pingtai\/?"/);
+  assert.match(html, /id="region-shortcuts"/);
+  assert.doesNotMatch(entries, /尚未开放|建设中|homeServiceList/);
 });

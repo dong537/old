@@ -14,7 +14,7 @@
   table { @apply w-full border-collapse; }
   th { @apply bg-brand-tint px-3 py-2 text-left text-[13px] font-semibold text-brand-ink; }
   td { @apply border-t border-hair px-3 py-2.5 align-top; }
-  ::selection { background: #cfe7e5; color: #0a4a4d; }
+  ::selection { background: #d8ead4; color: #1e591c; }
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 }
 
@@ -22,8 +22,7 @@
   .portal-header-surface { background: #ffffff; }
   #main-content:has(> .home-page) { display: block; width: 100%; max-width: none; margin: 0; padding: 0; }
   #main-content:has(> .institution-detail-page) { display: block; width: 100%; max-width: none; margin: 0; padding: 0; }
-  .home-hero { background: #eef4f4; border-bottom: 1px solid #dfe9e8; }
-  .home-page .home-hero { margin-top: -131px; }
+  #main-content:has(> .institution-article-page) { display: block; width: 100%; max-width: none; margin: 0; padding: 0; }
   .container-site { @apply mx-auto w-full max-w-site px-4 sm:px-6 lg:px-8; }
   .card { @apply rounded-card border border-line bg-white shadow-card; }
   .source-entry { @apply flex min-w-0 flex-col rounded-card border border-line bg-white p-5 shadow-card transition-all hover:border-brand hover:shadow-lift; }

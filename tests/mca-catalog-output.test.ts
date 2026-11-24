@@ -169,3 +169,31 @@ test('public scan permits source prose about registration authority only in the 
     await assert.rejects(scanPublicOutput(dir), /私有/);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+test('public scan recognizes a reviewed introduction split across Next flight chunks', async () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'mca-catalog-flight-intro-'));
+  const data = fixture();
+  const intro = '机构全称：测试养老机构 登记机关：当地民政部门 业务范围：养老服务。';
+  data.fields.intro = intro;
+  data.save();
+  const page = path.join(dir, 'quanguo', 'pingtai', csvId, 'index.html');
+  const flight = JSON.stringify({ children: intro });
+  const splitAt = flight.indexOf('登记机关') - 8;
+  const chunk = (value: string) => '<script>self.__next_f.push([1,' + JSON.stringify(value) + '])</script>';
+  const write = (extra = '') => {
+    for (const [relative, value] of [...oldFiles, ...data.files]) {
+      const file = path.join(dir, relative);
+      mkdirSync(path.dirname(file), { recursive: true });
+      writeFileSync(file, value);
+    }
+    mkdirSync(path.dirname(page), { recursive: true });
+    writeFileSync(page, '<p>' + intro + '</p>' + chunk(flight.slice(0, splitAt)) +
+      chunk(flight.slice(splitAt)) + extra);
+  };
+  try {
+    write();
+    assert.equal((await scanPublicOutput(dir)).filesScanned, 6);
+    write(chunk(JSON.stringify({ children: '另一处登记机关字段不可借用介绍豁免' })));
+    await assert.rejects(scanPublicOutput(dir), /介绍以外|私有/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});

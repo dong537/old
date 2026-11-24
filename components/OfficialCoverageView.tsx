@@ -26,8 +26,8 @@ export function OfficialCoverageView({ coverage }: { coverage: OfficialCoverage 
   const recorded = coverage.regions.filter(region => region.officialSlug !== null);
   const pending = coverage.regions.filter(region => region.officialSlug === null);
   return <section className="card p-5 sm:p-6" aria-labelledby="official-coverage-title">
-    <h2 id="official-coverage-title" className="m-0 text-lg font-semibold text-ink">全国官方来源覆盖</h2>
-    <p className="mb-0 mt-2 text-[14px] leading-relaxed text-body">本站在 {coverage.regions.length} 个省级地区中，已有 {coverage.officialRegionCount} 个地区的逐名官方来源，共 {coverage.officialRowCount.toLocaleString('zh-CN')} 条来源观察；另有 {coverage.pendingRegionCount} 个地区待补。已有 {coverage.referenceRowCount.toLocaleString('zh-CN')} 条机构线索供查漏。来源行、线索行均不能当作机构家数，也不证明目前在营。</p>
+    <h2 id="official-coverage-title" className="m-0 text-lg font-semibold text-ink">地方逐名官方来源覆盖</h2>
+    <p className="mb-0 mt-2 text-[14px] leading-relaxed text-body">本区块不含民政部平台快照。本站在 {coverage.regions.length} 个省级地区中，已有 {coverage.officialRegionCount} 个地区的逐名官方来源，共 {coverage.officialRowCount.toLocaleString('zh-CN')} 条来源观察；另有 {coverage.pendingRegionCount} 个地区待补。已有 {coverage.referenceRowCount.toLocaleString('zh-CN')} 条机构线索供查漏。来源行、线索行均不能当作机构家数，也不证明目前在营。</p>
     <div className="mt-4 grid gap-4 lg:grid-cols-2">
       <details open className="min-w-0 rounded-xl border border-line px-4 py-3">
         <summary className="cursor-pointer font-semibold text-ink">已有官方来源 · {recorded.length} 个地区</summary>

@@ -4,6 +4,8 @@ import type { ReactNode } from 'react';
 import { catalog } from '@/lib/catalog';
 import { PageTitle } from '@/components/DirectoryUi';
 import { SourceNote } from '@/components/SourceNote';
+import { mcaCatalogLoader } from '@/lib/mca-catalog-static';
+import { summarizeMcaCatalog } from '@/lib/mca-catalog-scope';
 import nationalManifest from '@/public/data/qcc-national/manifest.v1.json';
 import officialManifest from '@/public/data/national-official/manifest.v1.json';
 import institutionReferenceManifest from '@/public/data/qcc-institutions/manifest.v1.json';
@@ -25,6 +27,7 @@ function Sec({ id, title, children }: { id: string; title: string; children: Rea
 }
 
 export default function RulesPage() {
+  const platform = summarizeMcaCatalog(mcaCatalogLoader.getManifest());
   return <>
     <PageTitle title="方法论" lead="养老信源怎么收数据、怎样标明来源，以及哪些资料目前还不知道。这里说明当前目录的实际范围和使用方式。" />
     <nav aria-label="方法论目录" className="card flex flex-wrap gap-x-5 gap-y-2 p-4 text-[14px]">
@@ -42,6 +45,7 @@ export default function RulesPage() {
 
     <Sec id="scope" title="收录范围：全国线索、官方来源、登记主体与广州专项">
       <ul className="m-0 flex flex-col gap-1.5 pl-5 text-body">
+        <li>民政部平台主目录快照收录 {platform.recordCount.toLocaleString('zh-CN')} 个不重复平台 ID，其中 {platform.detailCount.toLocaleString('zh-CN')} 条有详情、{platform.indexOnlyCount.toLocaleString('zh-CN')} 条仅有索引；CSV 导入 {platform.csvRowCount.toLocaleString('zh-CN')} 行，与已有观察记录按平台 ID 合并，不能与其他来源行、登记主体候选相加。此快照非全国全量，不代表当前在营。</li>
         <li>全国机构线索来自用户提供的《养老机构信息.xlsx》，共有 {institutionReferenceManifest.rowCount.toLocaleString('zh-CN')} 条企查查来源机构线索，按原表行政区划代码与“地区”列分为 {institutionReferenceManifest.provinces.length} 个省级地区、{institutionReferenceManifest.provinces.reduce((count, province) => count + province.cities.length, 0)} 个地市展示组。它与登记主体候选和官方来源可能重叠，来源行不等于独立机构，资料截至日未知，也不能证明当前在营或空床。</li>
         <li>广东以外另收录 {officialManifest.rowCount.toLocaleString('zh-CN')} 条跨省官方来源记录，来自 {officialManifest.sources.length} 组经核验的官方来源、覆盖 {officialManifest.provinces.length} 个省级地区。各来源范围不同，可能包含敬老院、社区照料设施或医院；来源行不能当作全国或所在省市的当前全量机构数。</li>
         <li>全国官方来源目录中的广东记录按 21 市各一份已取到的官方逐名来源展示名称线索。它们来自不同资料期，包含部分区县子集；列表数字是来源记录数，不是独立机构数或当前在营数。</li>
@@ -56,6 +60,7 @@ export default function RulesPage() {
     </Sec>
 
     <Sec id="sources" title="数据来源">
+      <p className="m-0 text-body">民政部平台主目录使用全国养老服务信息平台的部分列表观察和获授权的 CSV 详情导出；平台 ID 是记录键，不是经核实的独立养老场所。主目录快照编号 {platform.snapshotId}；CSV 导出日期是 {platform.csvExportDate}，不是平台官网逐家资料截至日或当前运营核验日。<Link href="/quanguo/pingtai/">查看平台主目录 →</Link></p>
       <p className="m-0 text-body">广州档案使用以下单份官方名单，保留原始名单序号。广东来源记录按城市展示不同日期的官方逐名来源；其他省市来源保留冻结原件 SHA-256、来源行序及可核的工作表行号。各来源发布日期与原文明示资料期分别标示，不把清洗归档日写成官方资料日期。其他省市的登记主体候选来自 {nationalManifest.exportedAt} 导出的企查查宽口径搜索快照，逐条保留原文件和行号，与官方来源分开。</p>
       <p className="m-0 text-body">全国机构线索来自用户提供并确认可公开展示的企查查《养老机构信息.xlsx》。本地接收日是 {institutionReferenceManifest.receivedAt}，不是机构资料截至日；原表省市派生列存在冲突，检索仍以相互一致的行政区划代码与“地区”列分组。详情逐列保留全部 11 个原列名和非联系字段原值及空值，包括地址、原始代码、补充省市区和经纬度；含联系方式的自由文本整格显示“[已遮蔽]”。私有 XLSX 原件保留不变，不随网站发布。这些来源字段未经逐家核验，不用于导航或替代已校验的登记代码。来源线索与官方机构来源之间尚未核实同一实体关系。</p>
       <SourceNote source={catalog.source} detailed />
@@ -108,6 +113,7 @@ export default function RulesPage() {
     </Sec>
 
     <Sec id="freshness" title="资料日期与更新">
+      <p className="m-0 text-body">民政部平台主目录的 CSV 导出于 <time dateTime={platform.csvExportDate}>{platform.csvExportDate}</time>，其中 {platform.csvStaleCount.toLocaleString('zh-CN')} 条采集器标为 stale；这是采集资料待刷新，不是机构注销或停业。目录快照与逐家采集时间均不等于主管部门的最新核验。本站未核实所有机构的当前在营状态，更新会保留来源证据、复核记录和发布版本。</p>
       <p className="m-0 text-body">官方名单发布于 <time dateTime={catalog.source.publishedAt}>{catalog.source.publishedAt}</time>。发布日期是来源日期，不是平台逐字段核验日期，也不是机构确认日期。</p>
       <p className="m-0 text-body">广东全省线索来自多个不同日期和覆盖范围的来源。资料截止期缺失时明确写“原文未说明”；相同名称可在不同日期重复出现，不能由此推断是同一家机构或现在仍在运营。</p>
       <p className="m-0 text-body">跨省来源逐份列示原文发布日期和资料期；缺失时保留“原文未说明”，不拿本站归档日期填补。各来源范围不同，床位数不等于当前空床，也不证明当前运营。</p>
@@ -118,9 +124,9 @@ export default function RulesPage() {
         <tbody>{[
           ['名称、地址、电话与备案床位', '名单发布时的快照，联系或到访前再次核实。'],
           ['三项预收费标记', '保留该次公示状态，当前方案需向机构索取书面说明。'],
-          ['收费金额、空床与可约时间', '暂无核验资料，不提供实时状态。'],
+          ['收费金额、空床与可约时间', '部分机构已有来源快照的参考收费区间，但未实时核验；空床与可约时间不提供实时状态。'],
           ['长护险考核与公示记录', '保留各来源原始发布日期及行号；不同来源不能拼成当前全量名录。'],
-          ['定期更新与机构自助确认', '尚未接入，不能承诺固定更新周期或自动提醒。'],
+          ['定期更新与机构自助确认', '项目所有者负责来源复核；首轮复核待完成，到期提醒只产生待办，不自动修改资料或证明逐家当前在营。机构自助确认未开放。'],
         ].map(([field, state]) => <tr key={field}><td>{field}</td><td className="text-body">{state}</td></tr>)}</tbody>
       </table></div>
       <div id="limits" className="scroll-mt-16 rounded-lg border border-gradeD-line bg-gradeD-soft px-4 py-3 text-[14px] text-gradeD">这是历史公开资料快照。机构可能更名、搬迁、调整服务或停止运营；请勿把名单收录、备案床位或预收费标记当作当前服务承诺。</div>
@@ -153,16 +159,16 @@ export default function RulesPage() {
       </ul>
     </Sec>
 
-    <Sec id="reports" title="报错与申诉（暂未开放）">
+    <Sec id="reports" title="报错与申诉">
       <ul className="m-0 flex flex-col gap-1.5 pl-5 text-body">
-        <li>尚未设立公开纠错邮箱或在线提交渠道，不显示提交成功或处理时限承诺。</li>
-        <li>发现资料不一致时，请先通过原文发布单位或机构官方渠道核实。</li>
-        <li>更新时对照新的官方名单逐条核对，保留来源日期与稳定档案编号。</li>
+        <li>可通过公开 GitHub Issue 表单报告本站资料错误；需要 GitHub 账号，工单内容对所有人可见。请只提交机构平台 ID、页面地址、争议字段及可核实来源，不提交老人病历、身份证或私人联系方式。<Link href="/corrections/">查看纠错方式与处理流程 →</Link></li>
+        <li>工单真正创建后才进入待处理队列；打开表单不等于已提交、受理或核实。当前无公开纠错邮箱，也不承诺处理时限。</li>
+        <li>项目所有者需对照新的官方原文或机构授权材料核实，记录结论和快照版本；无法证实则标待核，不直接覆盖原值。</li>
       </ul>
     </Sec>
 
     <Sec id="privacy" title="个人信息">
-      <p className="m-0 text-body">当前目录无需注册即可查询，不通过预约、认领或报错表单收集联系人、手机号、老人的健康情况等资料。这些提交功能尚未开放。</p>
+      <p className="m-0 text-body">当前目录无需注册即可查询；公开纠错使用 GitHub Issues，需要 GitHub 登录，工单公开可见。本站不提供收集老人病历、身份证、私人联系方式的表单；预约和机构认领未开放。</p>
       <p className="m-0 text-body">请不要在网址搜索词中填写身份证号、手机号或病历。联系机构时，先确认沟通渠道和接收方身份。</p>
     </Sec>
 

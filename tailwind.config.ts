@@ -5,10 +5,9 @@ export default {
   theme: {
     extend: {
       colors: {
-        // 主操作色：深青绿（依据设计契约，暖橙只用于核对提示）
-        brand: { DEFAULT: '#0F6A6E', dark: '#0B5357', tint: '#E8F3F2', line: '#BFDBD8', ink: '#0A4A4D' },
-        // 中性色：冷灰底 + 冷调文字
-        ink: '#1B2226', body: '#46525C', sub: '#64727E', page: '#F5F7F8', line: '#E2E7EA', hair: '#EDF1F3',
+        // 养老机构主流程采用参考站的绿白信息门户视觉；状态色仍独立表达来源和风险。
+        brand: { DEFAULT: '#2E861F', dark: '#246719', tint: '#F1F8EE', line: '#C8E2C2', ink: '#1E591C' },
+        ink: '#202A23', body: '#445148', sub: '#657268', page: '#F4F5F7', line: '#E3E9E1', hair: '#ECF0EA',
         gradeA: { DEFAULT: '#1B6E4E', bg: '#E6F4EC' },
         gradeB: { DEFAULT: '#24589E', bg: '#E9F0FA' },
         gradeC: { DEFAULT: '#4A5560', bg: '#EDF0F2' },
@@ -20,10 +19,10 @@ export default {
       fontFamily: { sans: ['-apple-system', 'BlinkMacSystemFont', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', 'sans-serif'] },
       maxWidth: { site: '1180px' },
       boxShadow: {
-        card: '0 1px 2px rgba(17, 32, 40, 0.04), 0 1px 3px rgba(17, 32, 40, 0.05)',
-        lift: '0 4px 14px rgba(17, 32, 40, 0.08)',
+        card: '0 1px 3px rgba(24, 47, 28, 0.05)',
+        lift: '0 5px 16px rgba(24, 47, 28, 0.10)',
       },
-      borderRadius: { card: '10px' },
+      borderRadius: { card: '4px' },
     },
   },
   plugins: [],

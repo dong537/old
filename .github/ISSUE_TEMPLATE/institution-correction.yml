@@ -1,0 +1,65 @@
+name: 机构资料纠错
+description: 报告本站公开机构资料的可核实错误（GitHub 公开工单）
+title: "[资料纠错] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        此表单需要 GitHub 账号登录。所有提交内容公开可见，包括文字、链接和附件。
+        请勿填写或上传老人病历、身份证、老人联系方式、家庭住址等个人信息；只提交公开可核验的机构资料。
+        创建工单仅表示收到待核线索，不代表本站已核实、更改资料或承诺处理时限。
+  - type: input
+    id: record_locator
+    attributes:
+      label: 本站记录定位（平台 ID、记录 ID 或来源行）
+      description: 民政部平台目录填平台 ID；其他目录填页面标示的记录 ID，或来源文件与行号。工单标题中的 ID 提示不会自动填入此栏。
+      placeholder: 例如 BA7E6A754BB0A66AE053E897A6C0B507，或来源文件及第 12 行
+    validations:
+      required: true
+  - type: input
+    id: page_url
+    attributes:
+      label: 本站机构页面 URL
+      description: 请粘贴发生争议的完整详情页地址，便于定位同名记录。
+      placeholder: https://本站域名/quanguo/pingtai/机构ID/
+    validations:
+      required: true
+  - type: input
+    id: disputed_field
+    attributes:
+      label: 争议字段
+      description: 例如机构名称、地址、床位、收费或服务项目；请一次说明一项主要争议。
+      placeholder: 例如 地址
+    validations:
+      required: true
+  - type: input
+    id: evidence_url
+    attributes:
+      label: 新证据 URL
+      description: 提供公开可访问的官方原文或机构公开公告；勿粘贴需要登录的私人文件链接。
+      placeholder: https://...
+    validations:
+      required: true
+  - type: input
+    id: evidence_date
+    attributes:
+      label: 新证据的发布日期或资料日期
+      description: 请写 YYYY-MM-DD；若原文未注明日期，请如实写“原文未说明”。
+      placeholder: YYYY-MM-DD 或 原文未说明
+    validations:
+      required: true
+  - type: textarea
+    id: explanation
+    attributes:
+      label: 事实说明
+      description: 写明本站当前显示什么、新证据写了什么，以及两者为何不一致。请勿提供个人身份或健康资料。
+      placeholder: 本站显示……；来源原文显示……；来源资料期为……
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy_acknowledgement
+    attributes:
+      label: 公开与隐私确认
+      options:
+        - label: 我知道工单内容公开，并确认没有提交老人病历、身份证、老人联系方式等个人信息。
+          required: true
