@@ -8,6 +8,7 @@ import {
 import { mcaCatalogLoader } from '@/lib/mca-catalog-static';
 import { articlePageCopy } from '@/lib/institution-article-copy';
 import { sitePath } from '@/lib/site-path';
+import { McaArticleContextLink } from '@/components/McaArticleContextLink';
 
 type Props = { params: Promise<{ id: string; slug: string }> };
 
@@ -35,7 +36,7 @@ export default async function InstitutionArticlePage({ params }: Props) {
   if (!article || !institution?.detailPath) notFound();
 
   const institutionName = institution.name ?? '该机构';
-  const institutionHref = sitePath('/quanguo/pingtai/' + encodeURIComponent(id) + '/');
+  const institutionHref = '/quanguo/pingtai/' + encodeURIComponent(id) + '/';
   const related = listPublishedInstitutionArticles(id).filter(item => item.slug !== slug);
   const copy = articlePageCopy(slug);
 
@@ -45,9 +46,9 @@ export default async function InstitutionArticlePage({ params }: Props) {
         <nav aria-label="面包屑" className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-sub">
           <a href={sitePath('/')} className="text-[#0e6d31]">首页</a>
           <span aria-hidden="true">›</span>
-          <a href={sitePath('/quanguo/pingtai/')} className="text-[#0e6d31]">找养老机构</a>
+          <McaArticleContextLink href="/quanguo/pingtai/" toDirectory className="text-[#0e6d31]">找养老机构</McaArticleContextLink>
           <span aria-hidden="true">›</span>
-          <a href={institutionHref} className="min-w-0 break-words text-[#0e6d31]">{institutionName}</a>
+          <McaArticleContextLink href={institutionHref} className="min-w-0 break-words text-[#0e6d31]">{institutionName}</McaArticleContextLink>
           <span aria-hidden="true">›</span>
           <span aria-current="page">{copy.breadcrumb}</span>
         </nav>
@@ -98,7 +99,7 @@ export default async function InstitutionArticlePage({ params }: Props) {
             </li>)}
           </ol>
         </section>
-        <a href={institutionHref} className="mt-7 inline-flex min-h-11 max-w-full items-center break-words border-t border-[#e2e8e1] pt-4 font-semibold text-[#0e6d31] underline-offset-4 hover:underline">← 返回{institutionName}的机构档案</a>
+        <McaArticleContextLink href={institutionHref} className="mt-7 inline-flex min-h-11 max-w-full items-center break-words border-t border-[#e2e8e1] pt-4 font-semibold text-[#0e6d31] underline-offset-4 hover:underline">← 返回{institutionName}的机构档案</McaArticleContextLink>
       </article>
 
       <aside aria-label="文章辅助信息" className="min-w-0 space-y-5">
@@ -106,7 +107,7 @@ export default async function InstitutionArticlePage({ params }: Props) {
           <h2 id="article-institution-heading" className="m-0 border-b border-[#e8ece7] pb-3 text-lg font-semibold text-ink">机构档案</h2>
           <p className="mb-0 mt-4 break-words text-base font-semibold leading-7 text-ink">{institutionName}</p>
           {(institution.regionPath ?? institution.regionLabel) && <p className="mb-0 mt-1 break-words text-sm leading-6 text-sub">{institution.regionPath ?? institution.regionLabel}</p>}
-          <a href={institutionHref} className="mt-4 inline-flex min-h-11 max-w-full items-center break-words border border-[#0e6d31] px-4 py-2 text-sm font-semibold text-[#0e6d31] underline-offset-4 hover:bg-[#f3faf3] hover:underline">查看机构档案 →</a>
+          <McaArticleContextLink href={institutionHref} className="mt-4 inline-flex min-h-11 max-w-full items-center break-words border border-[#0e6d31] px-4 py-2 text-sm font-semibold text-[#0e6d31] underline-offset-4 hover:bg-[#f3faf3] hover:underline">查看机构档案 →</McaArticleContextLink>
         </section>
         <nav aria-label="文章目录" className="hidden border border-[#e2e8e1] bg-white p-5 lg:block">
           <h2 className="m-0 border-b border-[#e8ece7] pb-3 text-lg font-semibold text-ink">本文目录</h2>
@@ -117,7 +118,7 @@ export default async function InstitutionArticlePage({ params }: Props) {
         {related.length > 0 && <section aria-labelledby="related-articles-heading" className="min-w-0 border border-[#e2e8e1] bg-white p-5">
           <h2 id="related-articles-heading" className="m-0 border-b border-[#e8ece7] pb-3 text-lg font-semibold text-ink">这家机构的其他文章</h2>
           <ul className="mb-0 mt-3 divide-y divide-[#e8ece7] pl-0">
-            {related.map(item => <li key={item.slug} className="list-none py-1"><a href={sitePath(institutionArticleHref(id, item.slug))} className="block min-h-11 max-w-full break-words py-2.5 font-medium text-[#0e6d31] underline-offset-4 hover:underline">{item.title}</a></li>)}
+            {related.map(item => <li key={item.slug} className="list-none py-1"><McaArticleContextLink href={institutionArticleHref(id, item.slug)} className="block min-h-11 max-w-full break-words py-2.5 font-medium text-[#0e6d31] underline-offset-4 hover:underline">{item.title}</McaArticleContextLink></li>)}
           </ul>
         </section>}
       </aside>

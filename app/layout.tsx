@@ -2,6 +2,7 @@ import { sitePath } from '@/lib/site-path';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { SiteHeader } from '@/components/SiteHeader';
+import { BackToTop } from '@/components/BackToTop';
 import { privatePreview } from '@company-data';
 import { catalog } from '@/lib/catalog';
 import './globals.css';
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return <html lang="zh-CN"><body><div className="flex min-h-screen flex-col">
+  return <html lang="zh-CN"><body><div id="page-top" tabIndex={-1} className="flex min-h-screen flex-col outline-none">
     <a href={sitePath("#main-content")} className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-white focus:p-3">跳到主要内容</a>
     {privatePreview && <div className="border-b border-caution-line bg-caution-bg px-4 py-2 text-center text-sm text-caution"><strong>本机私有预览</strong> · 含第三方工商快照与全国平台已观察原件，仅在此电脑查看；公开构建不含这些资料。</div>}
     <SiteHeader publishedAt={catalog.source.publishedAt} showMcaPreview={privatePreview} />
@@ -26,5 +27,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </div>
       <div className="border-t border-white/10"><div className="container-site py-4 text-xs leading-5 text-[#ACC9AB]">本站为独立资料整理项目；机构状态、床位和收费请以机构及主管部门最新信息为准。</div></div>
     </footer>
+    <BackToTop />
   </div></body></html>;
 }

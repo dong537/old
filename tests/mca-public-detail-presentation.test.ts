@@ -38,7 +38,7 @@ test('概况与紧随的费用区给出主要决策信息和官网出口', () =>
 
   const mainContent = html.replace(/<details[\s\S]*?<\/details>/g, '');
   assert.equal((mainContent.match(/总床位/g) ?? []).length, 1, '总床位不应在主内容重复');
-  assert.equal((mainContent.match(/8,000[–-]15,000/g) ?? []).length, 1, '同一月费区间不应在主内容重复');
+  assert.equal((mainContent.match(/8,000[–-]15,000/g) ?? []).length, 2, '完整区间应在首屏和收费明细各出现一次');
 });
 
 test('技术原码、坐标与完整索引只在可展开的来源原值中出现', () => {
@@ -58,12 +58,12 @@ test('服务与收费项目按家属任务分别分组', () => {
   assert.ok(sections.some(section => section.includes('8,000') && section.includes('医疗备用金')), '月费概览与分项收费应同组');
 });
 
-test('概况在手机阅读顺序中先给出床位与月费下限', () => {
+test('概况在手机阅读顺序中先给出床位与完整月费区间', () => {
   const html = render();
   const header = html.match(/<header id="mca-public-overview"[\s\S]*?<\/header>/)?.[0] ?? '';
   assert.match(header, /aria-label="机构关键事实"/);
   assert.ok(header.includes('55 个'));
-  assert.ok(header.includes('8,000'));
+  assert.match(header, /8,000[–-]15,000 元\/月/);
   assert.doesNotMatch(header, /2026-11-18[^<]*—[^<]*2026-11-18/);
 });
 
@@ -103,4 +103,21 @@ test('详情暂不展示图片计数或图片文件名', () => {
   const html = render();
   assert.doesNotMatch(visibleText(html), /机构图片记录|图片 URL/);
   assert.doesNotMatch(html, /hae5List|images_json|private-photo-file-id/);
+});
+
+test('首屏完整月费沿用原版强调色', () => {
+  const html = render();
+  const header = html.match(/<header id="mca-public-overview"[\s\S]*?<\/header>/)?.[0] ?? '';
+  assert.match(header, /text-\[#b47713\][^>]*>8,000[–-]15,000 元\/月/);
+  assert.doesNotMatch(header, /#855405|#edf7e9/);
+});
+
+test('关键摘要按月费、服务、资料来源排列，三个链接也指向原有章节', () => {
+  const html=render();
+  const h=html.match(/<header id="mca-public-overview"[\s\S]*?<\/header>/)?.[0] ?? '';
+  const fee=h.indexOf('data-overview-item="fees"');
+  const service=h.indexOf('data-overview-item="services"');
+  const sources=h.indexOf('data-overview-item="source"');
+  assert.ok(fee>=0 && fee<service && service<sources);
+  for(const target of ['fees','service','source']) assert.ok(h.includes('href="#mca-public-'+target+'"'));
 });

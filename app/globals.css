@@ -77,3 +77,100 @@
   .visit-questions li { break-inside: avoid; }
   .visit-answer-line { min-height: 18pt; }
 }
+
+/* Keep the original navigation geometry and palette; animate only the feedback. */
+.site-nav-feedback {
+  transition: background-color 140ms ease-out, color 140ms ease-out;
+}
+.site-nav-chevron {
+  display: inline-block;
+  transform: rotate(0deg);
+  transition: transform 170ms cubic-bezier(.2,.75,.25,1);
+}
+.site-nav-feedback[aria-expanded="true"] > .site-nav-chevron,
+.site-nav-mobile[open] > summary > .site-nav-chevron {
+  transform: rotate(180deg);
+}
+.site-nav-panel {
+  opacity: 0;
+  transform: translateY(-5px);
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 125ms ease-out, transform 145ms ease-out, visibility 0s linear 145ms;
+}
+.site-nav-panel[data-nav-panel="open"] {
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity 165ms ease-out, transform 190ms cubic-bezier(.2,.75,.25,1), visibility 0s;
+}
+@supports selector(details::details-content) and (interpolate-size: allow-keywords) {
+  .site-nav-mobile { interpolate-size: allow-keywords; }
+  .site-nav-mobile::details-content {
+    block-size: 0;
+    opacity: 0;
+    overflow: clip;
+    transition: block-size 200ms cubic-bezier(.2,.75,.25,1), opacity 155ms ease-out, content-visibility 200ms allow-discrete;
+  }
+  .site-nav-mobile[open]::details-content { block-size: auto; opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .site-nav-feedback, .site-nav-chevron, .site-nav-panel, .site-nav-panel[data-nav-panel="open"] { transition: none; }
+  .site-nav-panel { transform: none; }
+  .site-nav-mobile::details-content { transition: none; }
+}
+
+/* Normal page printing is unchanged unless the checklist is open. */
+@media print {
+  #page-top:has(.mca-visit-sheet[open]) > :not(main),
+  .mca-compare-page:has(.mca-visit-sheet[open]) > :not(.mca-compare-content),
+  .mca-compare-content:has(.mca-visit-sheet[open]) > :not(.mca-visit-sheet),
+  .mca-visit-sheet[open] .mca-visit-screen { display: none !important; }
+  #page-top:has(.mca-visit-sheet[open]), #page-top:has(.mca-visit-sheet[open]) > main,
+  .mca-visit-sheet[open] { display: block; min-height: 0; width: auto; max-width: none; margin: 0; padding: 0; border: 0; box-shadow: none; background: white; color: black; }
+  .mca-visit-sheet[open] .mca-visit-columns { grid-template-columns: 1fr 1fr; }
+  .mca-visit-sheet[open] .mca-visit-institution { break-inside: avoid-page; }
+}
+
+/* Keep native form and keyboard behavior; opt into picker motion only where supported. */
+@supports (appearance: base-select) and selector(select::picker(select)) {
+  .directory-budget-picker,
+  .directory-budget-picker::picker(select) { appearance: base-select; }
+  .directory-budget-picker { align-items: center; }
+  .directory-budget-picker::picker(select) {
+    @apply rounded-lg border border-brand-line bg-white text-ink shadow-lift;
+    max-block-size: min(20rem, 48dvh);
+    overflow: auto;
+    padding: .25rem;
+    margin-block: .25rem;
+    opacity: 0;
+    translate: 0 -4px;
+    transition: opacity 150ms ease-out, translate 165ms cubic-bezier(.2,.75,.25,1),
+      display 165ms allow-discrete, overlay 165ms allow-discrete;
+  }
+  .directory-budget-picker:open::picker(select) { opacity: 1; translate: 0 0; }
+  @starting-style {
+    .directory-budget-picker:open::picker(select) { opacity: 0; translate: 0 -4px; }
+  }
+  .directory-budget-picker::picker-icon { transition: rotate 165ms ease-out; }
+  .directory-budget-picker:open::picker-icon { rotate: 180deg; }
+  .directory-budget-picker option { @apply min-h-10 rounded px-2 py-1.5; }
+  .directory-budget-picker option:is(:hover, :focus-visible, :checked) { @apply bg-brand-tint text-brand-ink; }
+  @media (prefers-reduced-motion: reduce) {
+    .directory-budget-picker::picker(select), .directory-budget-picker::picker-icon { transition: none; }
+  }
+}
+@supports selector(details::details-content) and (interpolate-size: allow-keywords) {
+  .directory-more-filters { interpolate-size: allow-keywords; }
+  .directory-more-filters::details-content {
+    block-size: 0;
+    opacity: 0;
+    overflow: clip;
+    transition: block-size 185ms cubic-bezier(.2,.75,.25,1), opacity 150ms ease-out, content-visibility 185ms allow-discrete;
+  }
+  .directory-more-filters[open]::details-content { block-size: auto; opacity: 1; }
+  @media (prefers-reduced-motion: reduce) {
+    .directory-more-filters::details-content { transition: none; }
+  }
+}

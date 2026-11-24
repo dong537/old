@@ -126,11 +126,11 @@ test('home starts with nationwide search and separates source types', () => {
 
 test('home follows the observed portal order while keeping unsupported services explicit', () => {
   const home = renderToStaticMarkup(React.createElement(HomePage));
-  const order = ['id="home-hero"', 'aria-label="首页热点服务"', 'id="service-query"', 'id="online-services"', 'id="region-index"', 'id="home-entrances"'];
+  const order = ['id="home-hero"', 'id="home-find"', 'id="service-query"', 'id="home-cost-policy"', 'aria-label="首页热点服务"', 'id="online-services"', 'id="home-verify"', 'id="region-index"', 'id="home-entrances"'];
   for (let index = 1; index < order.length; index++) {
     assert.ok(home.indexOf(order[index - 1]) < home.indexOf(order[index]), `wrong homepage section order: ${order[index]}`);
   }
-  assert.match(home, /aria-label="在线办理类别"/);
+  assert.match(home, /aria-label="办事指南类别"/);
   assert.match(home, /id="online-tab-personal" role="tab"[^>]*aria-selected="true"/);
   assert.match(home, /办理前查机构来源线索/);
   assert.match(home, /办理前核对资料日期/);
@@ -207,4 +207,3 @@ test('the four opened pages keep their own category active alongside the nationw
     assert.match(html, /<form\b[^>]*action="(?:\/eldercare)?\/quanguo\/pingtai\/?"/);
   }
 });
-

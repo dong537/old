@@ -95,3 +95,37 @@ test('文章页提供可跳转的章节目录及可返回的机构侧栏，不�
   assert.match(html, /查看机构档案/);
   assert.doesNotMatch(html, /长者登记|预约参观|用户登录后可查看/);
 });
+
+
+test('详情到文章再返回档案，全程保留原目录的合法筛选条件', async () => {
+  const { SearchParamsContext } = await import('next/dist/shared/lib/hooks-client-context.shared-runtime');
+  const from = '/quanguo/pingtai/?province=广东省&page=2';
+  const params = new URLSearchParams({ from });
+  const wrap = (node: React.ReactNode, query = params) =>
+    renderToStaticMarkup(React.createElement(SearchParamsContext.Provider, { value: query }, node));
+  const id = sampledId;
+  const record = mcaPublicLoader.getIndex().records.find(item => item.mcaId === id);
+  const detail = mcaPublicLoader.getDetail(id);
+  assert.ok(record && detail);
+  const detailPage = React.createElement(McaPublicDetailView, {
+    record, detail, manifest: mcaPublicLoader.getManifest(), articles: [summary('sample-one', '机构解读')],
+  });
+  const encoded = new URLSearchParams({ from: '/quanguo/pingtai/?' + new URLSearchParams({ province: '广东省', page: '2' }) });
+  assert.ok(wrap(detailPage).includes('/wenzhang/sample-one/?' + encoded + '"'));
+  assert.doesNotMatch(wrap(detailPage), /元\/月起/);
+  const [path] = generateStaticParams();
+  const articlePage = await InstitutionArticlePage({ params: Promise.resolve(path) });
+  assert.ok(wrap(articlePage).includes('/quanguo/pingtai/' + path.id + '/?' + encoded + '"'));
+  const invalid = new URLSearchParams({ from: 'https://example.invalid/' });
+  assert.ok(!wrap(articlePage, invalid).includes('example.invalid'));
+});
+
+
+test('机构详情把返回放在名称上方，并在费用和服务之后提供下一步入口', () => {
+  const html=detailHtml([]);
+  const at=(s:string)=>{const i=html.indexOf(s);assert.ok(i>=0,s);return i;};
+  assert.ok(at('aria-label="返回查询"') < at('<h1'));
+  assert.ok(at('data-overview-item="services"') < at('aria-label="对比与咨询"'));
+  assert.ok(at('aria-label="对比与咨询"') < at('data-overview-item="source"'));
+  assert.match(html, /href="#mca-public-contact"[^>]*>查看机构咨询方式/);
+});

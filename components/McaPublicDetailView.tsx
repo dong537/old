@@ -1,4 +1,7 @@
-﻿import React from 'react';
+import React from 'react';
+import { InstitutionCitationPanel } from './InstitutionCitationPanel';
+import { mcaPublicDetailHref } from '@/lib/mca-public-ui';
+import { DetailCompareActions } from './McaCompareControls';
 import type { McaPreviewResolved, McaPreviewSubServiceDto } from '@/lib/mca-preview-dto';
 import type { McaObservedTimeRange, McaPublicDetailRecord, McaPublicIndexRecord, McaPublicManifest } from '@/lib/mca-public-types';
 import { mapMcaPublicDetailDisplay, type McaPublicDetailDisplayDto } from '@/lib/mca-public-detail-display';
@@ -8,6 +11,7 @@ import { institutionArticleHref, type InstitutionArticleSummary } from '@/lib/in
 import { sitePath } from '@/lib/site-path';
 import { correctionIssueHref } from '@/lib/correction-channel';
 import { McaDetailReturnLink } from './McaDetailReturnLink';
+import { McaArticleContextLink } from './McaArticleContextLink';
 
 function valueText<T>(field: McaPreviewResolved<T>, format: (value: T) => string): string {
   if (field.state === 'conflict') return '多次观察值冲突，待核对';
@@ -87,54 +91,77 @@ const navItems = [
 export function McaPublicDetailView({ record, detail, manifest, articles = [] }: {
   record: McaPublicIndexRecord; detail: McaPublicDetailRecord; manifest: McaPublicManifest; articles?: InstitutionArticleSummary[];
 }) {
-  return <McaDetailContent dto={mapMcaPublicDetailDisplay(record, detail, manifest)} articles={articles} />;
+  return <McaDetailContent dto={mapMcaPublicDetailDisplay(record, detail, manifest)} articles={articles} detailPath={record.detailPath} />;
 }
 
 export function McaCatalogDetailView({ record, detail, manifest, articles = [] }: {
   record: McaCatalogIndexRecord; detail: McaCatalogCsvDetail; manifest: McaCatalogManifest; articles?: InstitutionArticleSummary[];
 }) {
-  return <McaDetailContent dto={mapMcaCatalogDisplay(record, detail, manifest)} articles={articles} />;
+  return <McaDetailContent dto={mapMcaCatalogDisplay(record, detail, manifest)} articles={articles} detailPath={record.detailPath} />;
 }
 
-function McaDetailContent({ dto, articles }: { dto: McaPublicDetailDisplayDto | McaCatalogDisplayDto; articles: InstitutionArticleSummary[] }) {
+function McaDetailContent({ dto, articles, detailPath }: { dto: McaPublicDetailDisplayDto | McaCatalogDisplayDto; articles: InstitutionArticleSummary[]; detailPath: string | null }) {
   const { overview, capacity, source } = dto;
   const csvSource = 'sourceKind' in source ? source : null;
   const observedSource = 'sourceKind' in source ? null : source;
   const monthlyTotal = dto.monthlyFees.find(item => item.code === '04')?.range;
-  const hasMonthlyPrice = monthlyTotal?.state === 'observed' && !!monthlyTotal.value && monthlyTotal.value[0] > 0;
-  const monthlyPriceText = hasMonthlyPrice
-    ? monthlyTotal.value![0].toLocaleString('zh-CN') + ' 元/月起'
-    : monthlyTotal?.state === 'observed' && monthlyTotal.value?.[0] === 0
-      ? '来源含原值 0，请核对'
-      : monthlyTotal ? valueText(monthlyTotal, range => moneyRange(range, '元/月')) : '采集快照未提供';
+  const feeRange = monthlyTotal?.state === 'observed' ? monthlyTotal.value : null;
+  const hasMonthlyPrice = !!feeRange && feeRange[0] > 0;
+  const monthlyPriceText = monthlyTotal ? valueText(monthlyTotal, range => moneyRange(range, '元/月')) : '采集快照未提供';
+  const category = dto.serviceFields.find(item => item.label === '平台列示服务类别')?.field;
+  const services = category?.state === 'observed' && category.value
+    ? [...new Set(category.value.split(/[、，,；;]/).map(value => value.trim()).filter(Boolean))].slice(0, 3)
+    : [];
+
   const nav = [navItems[0], navItems[1], navItems[2], ...(dto.hasSubServices ? [{ id: 'mca-public-subservices', label: '其他服务' }] : []), ...(articles.length ? [navItems[3]] : []), navItems[4], navItems[5]];
 
   return <div className="institution-detail-page min-w-0 bg-page">
     <div className="bg-page">
       <div className="mx-auto w-full max-w-[1200px] px-4 pb-5 pt-4 sm:px-6 sm:pt-5">
-        <nav aria-label="面包屑" className="mb-5 flex flex-wrap gap-2 text-[13px] text-sub">
-          <a href={sitePath('/quanguo/pingtai/')} className="text-[#246719]">找养老机构</a><span aria-hidden="true">›</span><span className="min-w-0 break-words">{dto.name}</span>
+        <nav aria-label="返回查询" className="mb-2">
+          <React.Suspense fallback={<a href={sitePath('/quanguo/pingtai/')} className="underlink inline-flex min-h-11 items-center text-sm font-semibold">← 返回机构目录</a>}>
+            <McaDetailReturnLink />
+          </React.Suspense>
         </nav>
         <header id="mca-public-overview" className="rounded-card border border-line bg-white p-5 shadow-card sm:p-7">
-          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-8">
-            <div className="min-w-0">
-              <p className="m-0 text-[12px] font-semibold tracking-wide text-[#246719]">全国养老服务信息平台 · 机构资料快照</p>
-              <h1 className="mb-0 mt-2 break-words text-[clamp(1.6rem,3.2vw,2.25rem)] font-bold leading-tight text-ink">{dto.name}</h1>
-              <p className="mb-0 mt-3 break-words text-sm leading-6 text-body">{valueText(overview.region, value => value.replaceAll('/', ' / '))}{overview.facilityType.state === 'observed' && <> · {overview.facilityType.value}</>}</p>
-              <p className="mb-0 mt-1 break-words text-sm leading-6 text-ink"><span className="text-body">地址：</span>{valueText(overview.address, String)}</p>
-            </div>
-            <div className="flex shrink-0 flex-col items-start gap-3 md:items-end md:text-right">
-              <div><span className="block text-xs text-sub">月费参考 · 历史快照</span><strong className={'mt-1 block break-words font-semibold tabular-nums ' + (hasMonthlyPrice ? 'text-[clamp(1.5rem,3vw,2rem)] text-[#b47713]' : 'text-sm text-body')}>{monthlyPriceText}</strong></div>
-              <a href={source.sourcePage} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 w-full items-center justify-center rounded-sm border border-[#a4c99d] bg-[#f1f8ee] px-4 text-sm font-semibold text-[#246719] no-underline hover:bg-white sm:w-auto">打开官网原页核对 ↗</a>
-            </div>
+          <div className="min-w-0">
+            <p className="m-0 text-xs font-semibold tracking-wide text-brand-dark">全国养老服务信息平台 · 机构资料快照</p>
+            <h1 className="mb-0 mt-2 break-words text-[clamp(1.6rem,3.2vw,2.25rem)] font-bold leading-tight text-ink">{dto.name}</h1>
+            <p className="mb-0 mt-3 break-words text-sm leading-6 text-body">{valueText(overview.region, value => value.replaceAll('/', ' / '))}{overview.facilityType.state === 'observed' && <> · {overview.facilityType.value}</>}</p>
+            <p className="mb-0 mt-1 break-words text-sm leading-6 text-body">地址：{valueText(overview.address, String)}</p>
           </div>
+          <section aria-label="月费、服务和来源摘要" className="mt-5 grid min-w-0 gap-3 md:grid-cols-3">
+            <div data-overview-item="fees" className="min-w-0 rounded border border-line bg-page p-3 sm:p-4">
+              <h2 className="m-0 text-sm font-semibold">月总费用 · 历史快照</h2>
+              <strong className={'mt-1 block break-words font-semibold tabular-nums ' + (hasMonthlyPrice ? 'text-[clamp(1.5rem,3vw,2rem)] text-[#b47713]' : 'text-sm text-body')}>{monthlyPriceText}</strong>
+              {feeRange?.includes(0) && <p className="m-0 mt-1 text-xs text-caution">含来源原值 0，不代表免费。</p>}
+              <a href="#mca-public-fees" className="underlink inline-flex min-h-11 items-center text-sm">看费用明细 ↓</a>
+            </div>
+            <div data-overview-item="services" className="min-w-0 rounded border border-line bg-page p-3 sm:p-4">
+              <h2 className="m-0 text-sm font-semibold">平台列示服务</h2>
+              <p className="mb-0 mt-1 break-words text-sm leading-6 text-body">{services.length ? services.join('、') : category?.state === 'conflict' ? '服务资料有冲突，请核对' : '采集快照未提供服务类别'}</p>
+              <a href="#mca-public-service" className="underlink inline-flex min-h-11 items-center text-sm">查看服务信息 ↓</a>
+            </div>
+            <div role="group" aria-label="对比与咨询" className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 md:col-span-2 md:row-start-2">
+              <React.Suspense fallback={null}><DetailCompareActions pick={{ id: source.mcaId, name: dto.name, source: csvSource ? 'csv' : 'observed', detailPath, observedAt: csvSource?.csvUpdatedAtLocal ?? observedSource?.detailObservedAtUtc.latest ?? null }} /></React.Suspense>
+              <a href="#mca-public-contact" className="underlink inline-flex min-h-11 items-center text-sm">查看机构咨询方式 ↓</a>
+            </div>
+            <div data-overview-item="source" className="min-w-0 rounded border border-line bg-page p-3 sm:p-4 md:col-start-3 md:row-span-2 md:row-start-1">
+              <h2 className="m-0 text-sm font-semibold">资料来源与日期</h2>
+              <p className="mb-0 mt-1 break-words text-sm leading-6 text-body">{csvSource ? <>采集器记录：<time dateTime={csvSource.csvUpdatedAtLocal}>{csvSource.csvUpdatedAtLocal.replace('T', ' ')}</time>（时区未提供）</> : observedSource && <>详情采集于 <time dateTime={observedSource.detailObservedAtUtc.earliest}>{observedSource.detailObservedAtUtc.earliest.slice(0, 10)}</time>{observedSource.detailObservedAtUtc.earliest.slice(0, 10) !== observedSource.detailObservedAtUtc.latest.slice(0, 10) && <> 至 <time dateTime={observedSource.detailObservedAtUtc.latest}>{observedSource.detailObservedAtUtc.latest.slice(0, 10)}</time></>}（UTC）</>}</p>
+              <div className="flex flex-wrap gap-x-3">
+                <a href="#mca-public-source" className="underlink inline-flex min-h-11 items-center text-sm">看来源与引用 ↓</a>
+                <a href={source.sourcePage} target="_blank" rel="noopener noreferrer" className="underlink inline-flex min-h-11 items-center text-sm">打开官网原页核对 ↗</a>
+              </div>
+            </div>
+          </section>
+          <p className="mb-0 mt-3 text-xs leading-5 text-sub">历史快照不代表当前在营、空床或最新报价。</p>
           <dl aria-label="机构关键事实" className="mb-0 mt-5 grid gap-x-6 gap-y-3 border-y border-hair py-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
             <div className="min-w-0"><dt className="text-sub">设施类型</dt><dd className="m-0 mt-1 break-words font-medium">{valueText(overview.facilityType, String)}</dd></div>
             <div className="min-w-0"><dt className="text-sub">平台列示床位</dt><dd className="m-0 mt-1 font-semibold tabular-nums">{valueText(capacity.total, numberText)}</dd></div>
             <div className="min-w-0"><dt className="text-sub">机构面积</dt><dd className="m-0 mt-1 font-medium tabular-nums">{valueText(dto.areaSqm, value => value.toLocaleString('zh-CN') + ' ㎡')}</dd></div>
             <div className="min-w-0"><dt className="text-sub">联系电话</dt><dd className="m-0 mt-1 break-all font-medium">{overview.contactHref ? <a href={overview.contactHref}>{valueText(overview.contactPhone, String)}</a> : valueText(overview.contactPhone, String)}</dd></div>
           </dl>
-          <p className="mb-0 mt-3 text-xs leading-5 text-sub">{csvSource ? <>采集器记录时间：{csvSource.csvUpdatedAtLocal.replace('T', ' ')}（本地时间，时区未提供）</> : observedSource && <>详情采集于 <time dateTime={observedSource.detailObservedAtUtc.earliest}>{observedSource.detailObservedAtUtc.earliest.slice(0, 10)}</time>{observedSource.detailObservedAtUtc.earliest.slice(0, 10) !== observedSource.detailObservedAtUtc.latest.slice(0, 10) && <>—<time dateTime={observedSource.detailObservedAtUtc.latest}>{observedSource.detailObservedAtUtc.latest.slice(0, 10)}</time></>}</>}；历史快照不代表当前在营、空床或最新报价。</p>
         </header>
       </div>
     </div>
@@ -196,7 +223,7 @@ function McaDetailContent({ dto, articles }: { dto: McaPublicDetailDisplayDto | 
           <p className="mb-0 mt-2 text-sm leading-6 text-sub">本站依据注明时点的资料整理文章；文章不替代机构档案，也不证明当前在营、空床或最新报价。</p>
           <ul className="mb-0 mt-4 divide-y divide-hair border-t border-hair pl-0">
             {articles.map(article => <li key={article.slug} className="list-none py-4">
-              <a href={sitePath(institutionArticleHref(source.mcaId, article.slug))} className="block min-h-11 max-w-full break-words py-2.5 text-base font-semibold leading-6 text-[#246719] underline-offset-4 hover:underline">{article.title}</a>
+              <McaArticleContextLink href={institutionArticleHref(source.mcaId, article.slug)} className="block min-h-11 max-w-full break-words py-2.5 text-base font-semibold leading-6 text-[#246719] underline-offset-4 hover:underline">{article.title}</McaArticleContextLink>
               <p className="mb-0 mt-1 break-words text-sm leading-6 text-body">{article.summary}</p>
               <p className="mb-0 mt-2 break-words text-xs leading-5 text-sub">发布于 <time dateTime={article.publishedAt}>{article.publishedAt}</time> · 资料观察于 <time dateTime={article.evidenceAsOf}>{article.evidenceAsOf}</time></p>
             </li>)}
@@ -205,6 +232,11 @@ function McaDetailContent({ dto, articles }: { dto: McaPublicDetailDisplayDto | 
 
         <section id="mca-public-source" className="scroll-mt-20 rounded-card border border-line bg-white p-5 shadow-card sm:p-7">
           <h2 className="m-0 text-xl font-semibold">来源与时间</h2>
+          <InstitutionCitationPanel citation={{ name: dto.name, official: source.sourcePage,
+            detailPath: sitePath(mcaPublicDetailHref(source.mcaId)),
+            capture: csvSource ? csvSource.csvUpdatedAtLocal.replace('T', ' ') + '（时区未注明）' :
+              observedSource ? [observedSource.detailObservedAtUtc.earliest, observedSource.detailObservedAtUtc.latest]
+                .filter((date, index, values) => values.indexOf(date) === index).join(' 至 ') + '（UTC）' : '未列示' }} />
           <p className="mb-0 mt-3 text-sm text-body">平台 ID：<span className="break-all font-mono">{source.mcaId}</span></p>
           {observedSource && <><p className="mb-0 mt-2 break-words text-sm text-body">该机构详情采集时间：<ObservedTimeRange range={observedSource.detailObservedAtUtc} /> · 详情观察 {observedSource.detailObservationCount} 次</p>
             {observedSource.listObservedAtUtc && <p className="mb-0 mt-2 break-words text-sm text-body">该机构列表采集时间：<ObservedTimeRange range={observedSource.listObservedAtUtc} /> · 列表观察 {observedSource.listObservationCount} 次</p>}
@@ -234,9 +266,6 @@ function McaDetailContent({ dto, articles }: { dto: McaPublicDetailDisplayDto | 
               <p className="mb-0 mt-3 break-all text-xs text-sub">CSV 原件 SHA-256：{csvSource.sourceCsvSha256}</p>
             </div>
           </details>}
-          <React.Suspense fallback={<a href={sitePath('/quanguo/pingtai/')} className="mt-5 inline-flex min-h-11 items-center font-semibold">← 返回机构目录</a>}>
-            <McaDetailReturnLink />
-          </React.Suspense>
         </section>
       </section>
       <aside aria-label="机构联系与核对" className="min-w-0 lg:sticky lg:top-5">

@@ -1,6 +1,7 @@
-﻿import Link from 'next/link';
+import Link from 'next/link';
 import { HomeOnlineTabs } from '@/components/HomeOnlineTabs';
 import { sitePath } from '@/lib/site-path';
+import { getPublishedInstitutionArticle, institutionArticleHref } from '@/lib/institution-articles';
 import { mcaCatalogLoader } from '@/lib/mca-catalog-static';
 import { summarizeMcaCatalog } from '@/lib/mca-catalog-scope';
 import referenceManifest from '@/public/data/qcc-institutions/manifest.v1.json';
@@ -81,6 +82,7 @@ const shortProvinces = shortProvinceNames.flatMap(name => {
 
 export default function HomePage() {
   const platform = summarizeMcaCatalog(mcaCatalogLoader.getManifest());
+  const featuredArticle = getPublishedInstitutionArticle('BA7E6A754BB0A66AE053E897A6C0B507', 'longtan-zhaoru-bed-fee-source-guide');
   return <div className={styles.page + ' home-page min-w-0'}>
     <style>{homeStyles}</style>
     <div className={styles.shell}>
@@ -94,7 +96,17 @@ export default function HomePage() {
             <input id="home-keyword" name="q" type="search" maxLength={80} placeholder="输入机构名称、地区或地址" />
             <button type="submit">搜索机构</button>
           </form>
+          <nav aria-label="搜索快捷入口" className="mt-3 flex flex-wrap gap-2">
+            <Link href="/quanguo/pingtai/" className="btn-outline min-w-0 px-3 text-sm">找机构 <span aria-hidden="true">→</span></Link>
+            <Link href="/quanguo/jiage/" className="btn-outline min-w-0 px-3 text-sm">看费用 <span aria-hidden="true">→</span></Link>
+          </nav>
           <p className={styles.heroFoot}>民政部平台部分采集快照 · {platform.recordCount.toLocaleString('zh-CN')} 个不重复平台 ID · {platform.detailCount.toLocaleString('zh-CN')} 条有详情</p>
+          <nav aria-label="本页分区" className="home-portal-jump">
+            <span>本页分区</span>
+            <a href="#home-find">找养老机构</a>
+            <a href="#home-cost-policy">看费用与政策</a>
+            <a href="#home-verify">核对资料来源</a>
+          </nav>
         </div>
         <nav aria-label="首页主要入口" className={styles.quickGrid}>
           {quickEntries.map(item => <Link key={item.href} href={item.href} className={styles.quickCard}>
@@ -104,49 +116,85 @@ export default function HomePage() {
         </nav>
       </section>
 
-      <nav aria-label="首页热点服务" className={styles.hotLinks}>
-        <strong>热点服务</strong>
-        <div>{hotLinks.map(link => <Link key={link.href} href={link.href}>{link.label}</Link>)}
-          <Link href="/quanguo/banshi/">机构办事指南</Link>
-        </div>
-      </nav>
+      <section id="home-find" aria-labelledby="home-find-title" className="home-portal-stage">
+        <header className="home-portal-stageHeading">
+          <h2 id="home-find-title">找养老机构</h2>
+          <p>按机构名称搜索，或按地区打开相应的机构目录。</p>
+        </header>
+        <section id="service-query" aria-labelledby="service-query-title" className={styles.queryModule}>
+          <nav aria-label="首页查询栏目" className={styles.queryMenu}>
+            <h3 id="service-query-title">找机构的方式</h3>
+            {menuLinks.map((item, index) => item.href.startsWith('#')
+              ? <a key={item.href} href={item.href} className={index === 0 ? styles.menuActive : undefined}>{item.label}<span aria-hidden="true">›</span></a>
+              : <Link key={item.href} href={item.href}>{item.label}<span aria-hidden="true">›</span></Link>)}
+          </nav>
+          <div className={styles.queryBody}>
+            <div id="institution-search" className={styles.queryIntro}>
+              <div><h3>按名称或地区查机构</h3></div>
+              <Link href="/quanguo/pingtai/">进入全国目录 <span aria-hidden="true">→</span></Link>
+            </div>
+            <div id="region-shortcuts" className={styles.regionShortcuts}>
+              <div className={styles.shortcutHeading}><strong>地区快捷入口</strong><span>企查查来源表线索</span></div>
+              <ul>{shortProvinces.map(province => <li key={province.slug}><Link href={'/quanguo/cankao/sheng/' + province.slug + '/'}>{province.name}</Link></li>)}</ul>
+            </div>
+            <p className={styles.queryCaveat}>民政部平台部分采集快照：{platform.recordCount.toLocaleString('zh-CN')} 个不重复平台 ID，{platform.detailCount.toLocaleString('zh-CN')} 条有详情、{platform.indexOnlyCount.toLocaleString('zh-CN')} 条仅有索引。CSV 导出日期 {platform.csvExportDate}，非全国全量，不代表当前在营；进入目录可按省市和设施类型筛选。</p>
+          </div>
+        </section>
+      </section>
 
-      <section id="service-query" aria-labelledby="service-query-title" className={styles.queryModule}>
-        <nav aria-label="首页查询栏目" className={styles.queryMenu}>
-          <h2 id="service-query-title">养老服务</h2>
-          {menuLinks.map((item, index) => item.href.startsWith('#')
-            ? <a key={item.href} href={item.href} className={index === 0 ? styles.menuActive : undefined}>{item.label}<span aria-hidden="true">›</span></a>
-            : <Link key={item.href} href={item.href}>{item.label}<span aria-hidden="true">›</span></Link>)}
+      <section id="home-cost-policy" aria-labelledby="home-cost-policy-title" className="home-portal-stage">
+        <header className="home-portal-stageHeading">
+          <h2 id="home-cost-policy-title">看费用与政策</h2>
+          <p>先看公开月费样本，再找本地政策、长护险说明和办理入口。</p>
+        </header>
+        <nav aria-label="首页热点服务" className={styles.hotLinks}>
+          <strong>热点服务</strong>
+          <div>{hotLinks.map(link => <Link key={link.href} href={link.href}>{link.label}</Link>)}
+            <Link href="/quanguo/jiage/">价格参考</Link>
+            <Link href="/zhengce/">养老政策</Link>
+            <Link href="/quanguo/banshi/">机构办事指南</Link>
+          </div>
         </nav>
-        <div className={styles.queryBody}>
-          <div id="institution-search" className={styles.queryIntro}>
-            <div><p className={styles.sectionEyebrow}>机构查询</p><h2>按名称查机构，按来源核资料</h2></div>
-            <Link href="/quanguo/pingtai/">进入全国目录 <span aria-hidden="true">→</span></Link>
-          </div>
-          <form action={sitePath('/quanguo/pingtai/')} method="get" role="search" aria-label="查询全国机构线索" className={styles.queryForm}>
-            <label htmlFor="home-query-keyword">机构名称或地址</label>
-            <div><input id="home-query-keyword" name="q" type="search" maxLength={80} placeholder="例如：东城区 养老院" /><button type="submit">开始查询</button></div>
-          </form>
-          <div id="region-shortcuts" className={styles.regionShortcuts}>
-            <div className={styles.shortcutHeading}><h3>地区快捷入口</h3><span>企查查来源表线索</span></div>
-            <ul>{shortProvinces.map(province => <li key={province.slug}><Link href={'/quanguo/cankao/sheng/' + province.slug + '/'}>{province.name}</Link></li>)}</ul>
-          </div>
-          <p className={styles.queryCaveat}>民政部平台部分采集快照：{platform.recordCount.toLocaleString('zh-CN')} 个不重复平台 ID，{platform.detailCount.toLocaleString('zh-CN')} 条有详情、{platform.indexOnlyCount.toLocaleString('zh-CN')} 条仅有索引。CSV 导出日期 {platform.csvExportDate}，非全国全量，不代表当前在营；进入目录可按省市和设施类型筛选。</p>
+        <div className={styles.onlinePanel}><HomeOnlineTabs /></div>
+      </section>
+
+      <section id="home-reading" aria-labelledby="home-reading-title" className="home-portal-stage">
+        <header className="home-portal-stageHeading">
+          <h2 id="home-reading-title">文章与政策解读</h2>
+          <p>找完机构，再看资料怎么读、政策原文去哪核对。</p>
+        </header>
+        <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+          {featuredArticle && <article className="card min-w-0 p-4 sm:p-5">
+            <p className="m-0 text-xs font-semibold text-brand-dark">机构资料解读</p>
+            <h3 className="mb-0 mt-2 text-base"><Link href={institutionArticleHref(featuredArticle.institutionId, featuredArticle.slug)} className="underlink">{featuredArticle.title}</Link></h3>
+            <p className="mb-0 mt-2 text-sm leading-6 text-body">{featuredArticle.summary}</p>
+            <p className="mb-0 mt-2 text-xs text-sub">依据资料观察于 <time dateTime={featuredArticle.evidenceAsOf}>{featuredArticle.evidenceAsOf}</time></p>
+          </article>}
+          <article className="card min-w-0 p-4 sm:p-5">
+            <p className="m-0 text-xs font-semibold text-brand-dark">政策与办理</p>
+            <h3 className="mb-0 mt-2 text-base"><Link href="/zhengce/" className="underlink">查养老政策与官方原文</Link></h3>
+            <p className="mb-0 mt-2 text-sm leading-6 text-body">想问申请条件、材料或受理方式，先看办事指南里的实施主体和官方入口。</p>
+            <Link href="/quanguo/banshi/#personal-items" className="underlink inline-flex min-h-11 items-center text-sm">查看办事指南与官方渠道 <span aria-hidden="true">→</span></Link>
+          </article>
         </div>
       </section>
 
-      <div className={styles.onlinePanel}><HomeOnlineTabs /></div>
+      <section id="home-verify" aria-labelledby="home-verify-title" className="home-portal-stage">
+        <header className="home-portal-stageHeading">
+          <h2 id="home-verify-title">核对资料来源</h2>
+          <p>区分地方官方名单、机构线索和登记主体，查原文与资料日期。</p>
+        </header>
+        <section id="region-index" aria-labelledby="region-index-title" className={styles.regionIndex}>
+          <div className={styles.regionIndexHeading}><div><p className={styles.sectionEyebrow}>地区索引</p><h3 id="region-index-title">按省份进入企查查来源表线索</h3></div><Link href="/quanguo/cankao/">查看全部来源表 <span aria-hidden="true">→</span></Link></div>
+          <p>以下是来源表中的候选记录，不等于当前在营养老机构，也不自动关联民政部平台记录。</p>
+          <details open><summary>按省份展开来源线索 <span aria-hidden="true">⌄</span></summary>
+            <ul>{referenceManifest.provinces.map(province => <li key={province.slug}><Link href={'/quanguo/cankao/sheng/' + province.slug + '/'}>{province.name}</Link></li>)}</ul>
+          </details>
+        </section>
 
-      <section id="region-index" aria-labelledby="region-index-title" className={styles.regionIndex}>
-        <div className={styles.regionIndexHeading}><div><p className={styles.sectionEyebrow}>地区索引</p><h2 id="region-index-title">按省份进入企查查来源表线索</h2></div><Link href="/quanguo/cankao/">查看全部来源表 <span aria-hidden="true">→</span></Link></div>
-        <p>以下是来源表中的候选记录，不等于当前在营养老机构，也不自动关联民政部平台记录。</p>
-        <details open><summary>按省份展开来源线索 <span aria-hidden="true">⌄</span></summary>
-          <ul>{referenceManifest.provinces.map(province => <li key={province.slug}><Link href={'/quanguo/cankao/sheng/' + province.slug + '/'}>{province.name}</Link></li>)}</ul>
-        </details>
-      </section>
-
-      <section id="home-entrances" aria-label="本站资料入口" className={styles.entrances}>
-        {entranceCards.map(item => <Link key={item.href} href={item.href}><strong>{item.title}</strong><span>{item.desc} <b aria-hidden="true">→</b></span></Link>)}
+        <section id="home-entrances" aria-label="本站资料入口" className={styles.entrances}>
+          {entranceCards.map(item => <Link key={item.href} href={item.href}><strong>{item.title}</strong><span>{item.desc} <b aria-hidden="true">→</b></span></Link>)}
+        </section>
       </section>
     </div>
   </div>;

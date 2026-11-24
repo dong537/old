@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { logicalPathname, sitePath } from '@/lib/site-path';
 import { Logo } from './DirectoryUi';
+import { directoryFilterKeys, directoryFilterValue } from './mca-public-directory-filters';
 
 const primaryNav = [
   { href: '/', name: '首页' },
@@ -70,6 +71,7 @@ export function headerSearchHref(searchRoute: string, q: string, currentPathname
     for (const key of ['province', 'city']) { const value = live.get(key); if (value) next.set(key, value); }
   } else if (/^\/quanguo\/pingtai(?:\/[A-Za-z0-9_-]+)?\/?$/.test(currentPathname) && searchRoute === '/quanguo/pingtai/') {
     for (const key of ['province', 'city', 'type']) { const value = live.get(key); if (value) next.set(key, value); }
+    for (const key of directoryFilterKeys) { const value = directoryFilterValue(live, key); if (value) next.set(key, value); }
   } else if (staticProvince && searchRoute === '/quanguo/cankao/') {
     next.set('province', staticProvince);
   } else if (/^\/quanguo\/cankao(?:\/detail)?\/?$/.test(currentPathname)) {
@@ -102,24 +104,74 @@ function SiteHeaderContent({ searchKeyword, showMcaPreview }: { publishedAt: str
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const headerRef = useRef<HTMLElement>(null);
   const triggerRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const hoverTimer = useRef<number | undefined>(undefined);
+  const hoverOpened = useRef<string | null>(null);
+  const menuRoot = (id: string) => document.getElementById(id === 'all' ? 'site-mega-menu' : 'site-menu-' + id);
+  const clearHover = () => {
+    window.clearTimeout(hoverTimer.current);
+    hoverTimer.current = undefined;
+  };
+  const hasKeyboardFocus = () => {
+    const target = document.activeElement;
+    if (!target?.matches(':focus-visible')) return false;
+    return headerRef.current?.querySelector('[data-nav-panel="open"]')?.contains(target) ||
+      target.matches('button[aria-expanded="true"][aria-controls^="site-"]');
+  };
+  const switchMenu = (id: string, clickedWithPointer: boolean) => {
+    clearHover();
+    const hovered = hoverOpened.current === id;
+    hoverOpened.current = null;
+    setOpenMenu(current => current === id && !(clickedWithPointer && hovered) ? null : id);
+  };
+  const hoverBoundary = (id: string) => ({
+    'data-nav-hover': id,
+    onPointerEnter: (event: ReactPointerEvent<HTMLElement>) => {
+      if (event.pointerType !== 'mouse') return;
+      clearHover();
+      if (openMenu === id && menuRoot(id)?.dataset.navPanel === 'open') return;
+      hoverTimer.current = window.setTimeout(() => {
+        if (hasKeyboardFocus()) return;
+        hoverOpened.current = id;
+        setOpenMenu(id);
+      }, 85);
+    },
+    onPointerLeave: (event: ReactPointerEvent<HTMLElement>) => {
+      if (event.pointerType !== 'mouse') return;
+      clearHover();
+      hoverTimer.current = window.setTimeout(() => {
+        if (hasKeyboardFocus()) return;
+        hoverOpened.current = null;
+        setOpenMenu(null);
+      }, 180);
+    },
+  });
+  useEffect(() => () => window.clearTimeout(hoverTimer.current), []);
+
   const secondaryNav = showMcaPreview ? [...supportNav, { href: '/quanguo/mca-preview/', name: '全国平台本机预览' }] : supportNav;
   useEffect(() => {
-    if (!openMenu) return;
     const closeOutside = (event: PointerEvent) => {
       const target = event.target as Node;
-      const panel = document.getElementById(openMenu === 'all' ? 'site-mega-menu' : 'site-menu-' + openMenu);
-      if (!panel?.contains(target) && !triggerRefs.current[openMenu]?.contains(target)) setOpenMenu(null);
+      const panel = openMenu ? menuRoot(openMenu) : null;
+      if (openMenu && (panel?.contains(target) || triggerRefs.current[openMenu]?.contains(target))) return;
+      if (!headerRef.current?.contains(target) || openMenu) {
+        clearHover();
+        hoverOpened.current = null;
+        setOpenMenu(null);
+      }
     };
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.isComposing) return;
+      clearHover();
+      hoverOpened.current = null;
+      if (!openMenu) return;
       const trigger = triggerRefs.current[openMenu];
       if (!trigger?.getClientRects().length) { setOpenMenu(null); return; }
       event.preventDefault();
+      trigger.focus();
       setOpenMenu(null);
-      requestAnimationFrame(() => trigger?.focus());
     };
     const desktop = window.matchMedia('(min-width: 1024px)');
-    const closeOnViewportChange = () => setOpenMenu(null);
+    const closeOnViewportChange = () => { clearHover(); hoverOpened.current = null; setOpenMenu(null); };
     document.addEventListener('pointerdown', closeOutside);
     document.addEventListener('keydown', closeOnEscape);
     desktop.addEventListener('change', closeOnViewportChange);
@@ -136,31 +188,35 @@ function SiteHeaderContent({ searchKeyword, showMcaPreview }: { publishedAt: str
     const current = isCurrent(item.href);
     return <Link key={item.href} href={item.href} aria-current={current ? 'page' : undefined}
       onClick={event => {
+        clearHover();
+        hoverOpened.current = null;
         setOpenMenu(null);
         if (mobile) { const details = event.currentTarget.closest('details'); if (details) details.open = false; }
       }}
       className={mobile
-        ? 'block min-h-11 rounded px-4 py-2.5 text-[15px] no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#378821] ' + (current ? 'bg-[#eaf4e6] font-semibold text-[#246719]' : 'text-[#263d29] hover:bg-[#f3f8f0]')
-        : 'block min-h-10 px-4 py-2.5 text-[14px] no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[#287a23] ' + (current ? 'bg-[#edf7e9] font-semibold text-[#246719]' : 'text-[#33443a] hover:bg-[#f3f8f0] hover:text-[#287a23]')}>{item.name}</Link>;
+        ? 'site-nav-feedback block min-h-11 rounded px-4 py-2.5 text-[15px] no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#378821] ' + (current ? 'bg-[#eaf4e6] font-semibold text-[#246719]' : 'text-[#263d29] hover:bg-[#f3f8f0]')
+        : 'site-nav-feedback block min-h-10 px-4 py-2.5 text-[14px] no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[#287a23] ' + (current ? 'bg-[#edf7e9] font-semibold text-[#246719]' : 'text-[#33443a] hover:bg-[#f3f8f0] hover:text-[#287a23]')}>{item.name}</Link>;
   };
-  const quickLinkClass = 'inline-flex min-h-9 items-center gap-1.5 rounded-[4px] bg-[#0e8521] px-3 text-[13px] font-semibold text-white no-underline hover:bg-[#086d19] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0e8521]';
+  const quickLinkClass = 'site-nav-feedback inline-flex min-h-9 items-center gap-1.5 rounded-[4px] bg-[#0e8521] px-3 text-[13px] font-semibold text-white no-underline hover:bg-[#086d19] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0e8521]';
   return <header ref={headerRef} onBlur={event => {
-    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpenMenu(null);
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) { clearHover(); hoverOpened.current = null; setOpenMenu(null); }
   }} className="relative z-30 w-full bg-white">
     <div className="hidden border-b border-[#e8ece8] bg-white lg:block">
       <div className="relative mx-auto flex h-[70px] w-full max-w-[1200px] items-center justify-between gap-5 px-5">
         <nav aria-label="快捷入口" className="flex items-center gap-2.5">
           <Link href="/" aria-current={pathname === '/' ? 'page' : undefined} className={quickLinkClass}>首页 <span aria-hidden="true">⌂</span></Link>
+          <div {...hoverBoundary('all')} className="flex">
           <button type="button" ref={node => { triggerRefs.current.all = node; }} aria-expanded={openMenu === 'all'} aria-controls="site-mega-menu"
-            onClick={() => setOpenMenu(openMenu === 'all' ? null : 'all')} className={quickLinkClass + (openMenu === 'all' ? ' bg-[#086d19]' : '')}>导航 <span aria-hidden="true">▦</span></button>
-          <div id="site-mega-menu" className={(openMenu === 'all' ? 'grid' : 'hidden') + ' absolute inset-x-5 top-full z-50 max-h-[calc(100svh-70px)] grid-cols-4 gap-x-5 gap-y-6 overflow-y-auto rounded-b-md border border-[#e4eae3] bg-white p-6 shadow-[0_18px_38px_rgba(24,48,28,0.2)] xl:grid-cols-7'}>
+            onClick={event => switchMenu('all', event.detail > 0)} className={quickLinkClass + (openMenu === 'all' ? ' bg-[#086d19]' : '')}>导航 <span aria-hidden="true">▦</span></button>
+          <div id="site-mega-menu" data-nav-panel={openMenu === 'all' ? 'open' : 'closed'} aria-hidden={openMenu !== 'all'} inert={openMenu !== 'all'} className="site-nav-panel grid absolute inset-x-5 top-full z-50 max-h-[calc(100svh-70px)] grid-cols-4 gap-x-5 gap-y-6 overflow-y-auto rounded-b-md border border-[#e4eae3] bg-white p-6 shadow-[0_18px_38px_rgba(24,48,28,0.2)] xl:grid-cols-7">
             {categoryGroups.map(group => <div key={group.id} className="min-w-0">
               <h2 className="m-0 border-b border-[#e6eee3] pb-2 text-[15px] font-bold text-[#17261d]">{group.name}</h2>
               <ul className="m-0 mt-2 list-none p-0">{group.links.map(item => <li key={item.href}>{navLink(item)}</li>)}
                 {group.id === 'sources' && showMcaPreview && <li>{navLink({ href: '/quanguo/mca-preview/', name: '全国平台本机预览' })}</li>}
               </ul>
             </div>)}
-            <button type="button" onClick={() => { setOpenMenu(null); triggerRefs.current.all?.focus(); }} aria-label="关闭网站导航" className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-full bg-[#f2f5f1] text-xl text-[#536554] hover:bg-[#e5ede2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#287a23]">×</button>
+            <button type="button" onClick={() => { clearHover(); hoverOpened.current = null; triggerRefs.current.all?.focus(); setOpenMenu(null); }} aria-label="关闭网站导航" className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-full bg-[#f2f5f1] text-xl text-[#536554] hover:bg-[#e5ede2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#287a23]">×</button>
+          </div>
           </div>
           <Link href="/quanguo/pingtai/" className={quickLinkClass}>全国机构 <span aria-hidden="true">⌕</span></Link>
           <Link href="/quanguo/laiyuan/" className={quickLinkClass}>官方来源 <span aria-hidden="true">↗</span></Link>
@@ -191,27 +247,27 @@ function SiteHeaderContent({ searchKeyword, showMcaPreview }: { publishedAt: str
     <div className="bg-[#2e861f] text-white lg:bg-white lg:pb-2.5">
       <div className="mx-auto w-full max-w-[1200px] px-4 sm:px-5">
         <nav aria-label="主导航" className="relative hidden min-h-[50px] rounded-[4px] bg-[#2e861f] lg:grid lg:grid-cols-8">
-          <Link href="/" aria-current={pathname === '/' ? 'page' : undefined} style={pathname === '/' ? { color: '#173419' } : undefined} className={'flex min-h-[50px] items-center justify-center text-[16px] font-semibold text-white no-underline hover:bg-[#67ad13] hover:text-[#173419] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-white ' + (pathname === '/' ? 'bg-[#67ad13]' : '')}>首页</Link>
-          {categoryGroups.map((group, index) => <div key={group.id} className="relative min-w-0">
+          <Link href="/" aria-current={pathname === '/' ? 'page' : undefined} style={pathname === '/' ? { color: '#173419' } : undefined} className={'site-nav-feedback flex min-h-[50px] items-center justify-center text-[16px] font-semibold text-white no-underline hover:bg-[#67ad13] hover:text-[#173419] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-white ' + (pathname === '/' ? 'bg-[#67ad13]' : '')}>首页</Link>
+          {categoryGroups.map((group, index) => <div key={group.id} {...hoverBoundary(group.id)} className="relative min-w-0">
             <button type="button" ref={node => { triggerRefs.current[group.id] = node; }} aria-expanded={openMenu === group.id} aria-controls={'site-menu-' + group.id}
-              onClick={() => setOpenMenu(openMenu === group.id ? null : group.id)}
+              onClick={event => switchMenu(group.id, event.detail > 0)}
               style={openMenu === group.id || group.links.some(item => isCurrent(item.href)) ? { color: '#173419' } : undefined}
-              className={'flex min-h-[50px] w-full items-center justify-center gap-1.5 px-2 text-[16px] font-semibold text-white hover:bg-[#67ad13] hover:text-[#173419] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-white ' + (openMenu === group.id || group.links.some(item => isCurrent(item.href)) ? 'bg-[#67ad13]' : '')}>
-              {group.name}<span aria-hidden="true" className="text-xs">⌄</span>
+              className={'site-nav-feedback flex min-h-[50px] w-full items-center justify-center gap-1.5 px-2 text-[16px] font-semibold text-white hover:bg-[#67ad13] hover:text-[#173419] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-white ' + (openMenu === group.id || group.links.some(item => isCurrent(item.href)) ? 'bg-[#67ad13]' : '')}>
+              {group.name}<span aria-hidden="true" className="site-nav-chevron text-xs">⌄</span>
             </button>
-            <div id={'site-menu-' + group.id} className={(openMenu === group.id ? 'block' : 'hidden') + ' absolute top-full z-40 min-w-[205px] rounded-b-md border border-[#e2e9df] bg-white py-2 shadow-[0_12px_24px_rgba(20,45,25,0.18)] ' + (index >= 4 ? 'right-0' : 'left-0')}>
+            <div id={'site-menu-' + group.id} data-nav-panel={openMenu === group.id ? 'open' : 'closed'} aria-hidden={openMenu !== group.id} inert={openMenu !== group.id} className={'site-nav-panel absolute top-full z-40 min-w-[205px] rounded-b-md border border-[#e2e9df] bg-white py-2 shadow-[0_12px_24px_rgba(20,45,25,0.18)] ' + (index >= 4 ? 'right-0' : 'left-0')}>
               {group.links.map(item => navLink(item))}
             </div>
           </div>)}
         </nav>
-        <details className="lg:hidden" onKeyDown={event => {
+        <details className="site-nav-mobile lg:hidden" onKeyDown={event => {
           if (event.key !== 'Escape' || event.nativeEvent.isComposing || !event.currentTarget.open) return;
           event.preventDefault();
           event.currentTarget.open = false;
           event.currentTarget.querySelector('summary')?.focus();
         }}>
           <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-white [&::-webkit-details-marker]:hidden">
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 6h16M4 12h16M4 18h16" /></svg>网站导航
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 6h16M4 12h16M4 18h16" /></svg><span className="site-nav-chevron order-last ml-auto text-xs" aria-hidden="true">⌄</span>网站导航
           </summary>
           <div className="grid max-h-[70svh] gap-3 overflow-y-auto border-t border-white/20 bg-white p-2 text-[#263d29] shadow-md">
             <nav aria-label="移动端导航" className="grid gap-0.5">{primaryNav.map(item => navLink(item, true))}</nav>

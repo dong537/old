@@ -6,7 +6,7 @@ import { useRef, useState } from 'react';
 const tabs = [
   { id: 'personal', label: '个人事项' },
   { id: 'institution', label: '机构事项' },
-  { id: 'guide', label: '办事指南' },
+  { id: 'guide', label: '官方入口' },
 ] as const;
 type TabId = typeof tabs[number]['id'];
 
@@ -27,8 +27,8 @@ export function HomeOnlineTabs() {
   }
 
   return <section id="online-services" aria-labelledby="online-services-title" className="min-w-0">
-    <h2 id="online-services-title" className="m-0 text-[20px] font-semibold text-ink">在线办理</h2>
-    <div role="tablist" aria-label="在线办理类别" className="mt-5 flex max-w-full gap-5 overflow-x-auto border-b border-line sm:gap-7">
+    <h3 id="online-services-title" className="m-0 text-[20px] font-semibold text-ink">办事指南</h3>
+    <div role="tablist" aria-label="办事指南类别" className="mt-5 flex max-w-full gap-5 overflow-x-auto border-b border-line sm:gap-7">
       {tabs.map((tab, index) => <button key={tab.id} ref={element => { tabRefs.current[index] = element; }}
         id={'online-tab-' + tab.id} role="tab" type="button" aria-selected={active === tab.id}
         aria-controls={'online-panel-' + tab.id} tabIndex={active === tab.id ? 0 : -1}
