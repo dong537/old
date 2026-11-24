@@ -3,7 +3,7 @@ set -euo pipefail
 
 # 只操作养老验收站的版本目录和 current 软链接；其他 Nginx 路径不在本脚本范围内。
 if [[ $# -lt 3 ]]; then
-  echo 'Usage: release-eldercare.sh prepare|activate|rollback|abort RUN_ID-ATTEMPT COMMIT_SHA [UPLOAD_DIR]' >&2
+  echo 'Usage: release-eldercare.sh prepare|apply|activate|rollback|abort RUN_ID-ATTEMPT COMMIT_SHA [UPLOAD_DIR]' >&2
   exit 2
 fi
 mode="$1"
@@ -52,6 +52,11 @@ switch_to() {
   mv -Tf "$next_link" "$current"
 }
 
+safe_delta_path() {
+  local rel="$1"
+  [[ "$rel" == ./* && "$rel" != './' && "$rel" != *'//'* && "$rel" != *'/./'* && "$rel" != *'/../'* && "$rel" != *'/.' && "$rel" != *'/..' && "$rel" != */ && "$rel" != *[[:cntrl:]]* ]]
+}
+
 case "$mode" in
   prepare)
     if [[ -e "$release" || -L "$release" ]]; then
@@ -63,10 +68,54 @@ case "$mode" in
       exit 2
     fi
     (umask 022; mkdir -p "$release_tree")
-    # rsync replaces changed files atomically; never use --inplace on this hardlink clone.
+    # Only the candidate may replace a hardlinked file; the active release stays untouched.
     cp -al -- "$current_target/eldercare/." "$release_tree/"
+    if [[ -s "$current_target/eldercare.manifest.sha256" ]]; then
+      cp -- "$current_target/eldercare.manifest.sha256" "$release/.previous-manifest.sha256"
+    else
+      echo 'Previous release has no stored manifest; hashing its public tree once.' >&2
+      (cd "$current_target/eldercare" && find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum) > "$release/.previous-manifest.sha256"
+    fi
     printf '%s\n' "$current_target" > "$release/.previous-target"
     printf '%s\n' "$release_tree"
+    ;;
+  apply)
+    if [[ -z "$upload_dir" || ! -d "$upload_dir" || ! -f "$upload_dir/changed.paths.nul" || ! -f "$upload_dir/removed.paths.nul" ]]; then
+      echo 'The changed and removed path lists are required.' >&2
+      exit 2
+    fi
+    if [[ ! -d "$release_tree" || -L "$release" || ! -f "$release/.previous-target" ]]; then
+      echo 'The prepared candidate is missing or unsafe.' >&2
+      exit 2
+    fi
+    if find "$release_tree" -type l -print -quit | grep -q .; then
+      echo 'The candidate contains a symlink before delta application.' >&2
+      exit 2
+    fi
+    while IFS= read -r -d '' rel; do
+      if ! safe_delta_path "$rel"; then echo 'Unsafe removed path.' >&2; exit 2; fi
+      rm -f -- "$release_tree/$rel"
+    done < "$upload_dir/removed.paths.nul"
+    find "$release_tree" -mindepth 1 -depth -type d -empty -delete
+    if [[ -s "$upload_dir/changed.paths.nul" ]]; then
+      if [[ ! -s "$upload_dir/changed.tar.gz" ]]; then echo 'Changed archive is missing.' >&2; exit 2; fi
+      while IFS= read -r -d '' rel; do
+        if ! safe_delta_path "$rel"; then echo 'Unsafe changed path.' >&2; exit 2; fi
+      done < "$upload_dir/changed.paths.nul"
+      if ! cmp -s <(tr '\0' '\n' < "$upload_dir/changed.paths.nul" | LC_ALL=C sort) <(tar --quoting-style=literal -tzf "$upload_dir/changed.tar.gz" | LC_ALL=C sort); then
+        echo 'Archive members do not match the changed path list.' >&2
+        exit 2
+      fi
+      if ! tar --quoting-style=literal -tzvf "$upload_dir/changed.tar.gz" | awk 'substr($0,1,1)!="-" {exit 1}'; then
+        echo 'The changed archive contains a non-regular member.' >&2
+        exit 2
+      fi
+      (umask 022; tar --extract --gzip --file="$upload_dir/changed.tar.gz" --directory="$release_tree" --unlink-first --no-same-owner --no-same-permissions)
+    elif [[ -e "$upload_dir/changed.tar.gz" ]]; then
+      echo 'An archive was supplied for an empty changed path list.' >&2
+      exit 2
+    fi
+    echo 'Applied manifest delta to the isolated candidate.'
     ;;
   activate)
     if [[ -z "$upload_dir" || ! -f "$upload_dir/eldercare.manifest.sha256" ]]; then
@@ -102,6 +151,7 @@ case "$mode" in
       exit 1
     fi
     (cd "$release_tree" && sha256sum -c --quiet "$upload_dir/eldercare.manifest.sha256")
+    install -m 644 -- "$upload_dir/eldercare.manifest.sha256" "$release/eldercare.manifest.sha256"
     # Once a switch is attempted, keep this version for audit and future rollback chains.
     printf '%s\n' "$commit_sha" > "$release/.activation-attempted"
     switch_to "$release"
@@ -141,7 +191,7 @@ case "$mode" in
     echo "Rolled back to $previous"
     ;;
   *)
-    echo 'Usage: release-eldercare.sh prepare|activate|rollback|abort RUN_ID-ATTEMPT COMMIT_SHA [UPLOAD_DIR]' >&2
+    echo 'Usage: release-eldercare.sh prepare|apply|activate|rollback|abort RUN_ID-ATTEMPT COMMIT_SHA [UPLOAD_DIR]' >&2
     exit 2
     ;;
 esac

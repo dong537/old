@@ -4,6 +4,7 @@ export LC_ALL=C
 
 repo="$(cd "$(dirname "$0")/.." && pwd)"
 script="$repo/deploy/release-eldercare.sh"
+planner="$repo/scripts/plan-eldercare-sync.py"
 scratch="$(mktemp -d)"
 root="$scratch/eldercare"
 upload="$scratch/upload"
@@ -18,7 +19,16 @@ manifest() {
   (cd "$1" && find . -type f -print0 | sort -z | xargs -0 sha256sum) \
     > "$upload/eldercare.manifest.sha256"
 }
-sync_files() { (umask 022; rsync -r --checksum --delete --stats "$source/" "$1/" > "$2"); }
+sync_files() {
+  local candidate="$1" run_key="$2" previous
+  previous="$(dirname "$candidate")/.previous-manifest.sha256"
+  rm -f -- "$upload/changed.paths.nul" "$upload/removed.paths.nul" "$upload/delta-summary.json" "$upload/changed.tar.gz"
+  python3 "$planner" --previous "$previous" --next "$upload/eldercare.manifest.sha256" --changed "$upload/changed.paths.nul" --removed "$upload/removed.paths.nul" --summary "$upload/delta-summary.json"
+  if [[ -s "$upload/changed.paths.nul" ]]; then
+    (cd "$source" && tar --null --verbatim-files-from --hard-dereference -czf "$upload/changed.tar.gz" -T "$upload/changed.paths.nul")
+  fi
+  release apply "$run_key" "$sha" "$upload"
+}
 
 mkdir -p "$root/releases/old/eldercare" "$upload" "$source"
 old="$root/releases/old/eldercare"
@@ -53,7 +63,7 @@ candidate="$(release prepare 123-1 "$sha")"
 [[ "$(stat -c '%a' "$candidate")" == 755 ]] || fail 'candidate export directory is not traversable by the web server'
 [[ "$(readlink -f "$root/current")" == "$root/releases/old" ]]
 same_inode "$old/keep.txt" "$candidate/keep.txt" || fail 'prepare did not hardlink unchanged content'
-sync_files "$candidate" "$scratch/first-rsync.stats"
+sync_files "$candidate" 123-1
 same_inode "$old/keep.txt" "$candidate/keep.txt" || fail 'unchanged content was transferred'
 same_inode "$old/mtime-only.txt" "$candidate/mtime-only.txt" || fail 'mtime-only content was transferred'
 ! same_inode "$old/change.txt" "$candidate/change.txt" || fail 'changed content modified the old release inode'
@@ -65,12 +75,12 @@ same_inode "$old/mtime-only.txt" "$candidate/mtime-only.txt" || fail 'mtime-only
 release activate 123-1 "$sha" "$upload"
 [[ "$(readlink -f "$root/current")" == "$root/releases/gha-123-1-$sha" ]]
 [[ "$(cat "$root/current/eldercare/release.txt")" == "$sha" ]]
+[[ -s "$root/current/eldercare.manifest.sha256" ]] || fail 'activated release did not retain the verified manifest'
 
 # 内容完全相同时为零传输；未激活候选可清理，激活版本不可 abort。
 same_candidate="$(release prepare 123-2 "$sha")"
-sync_files "$same_candidate" "$scratch/same-rsync.stats"
-grep -Eq '^Number of (regular )?files transferred: 0$' "$scratch/same-rsync.stats" \
-  || fail 'identical release unexpectedly transferred files'
+sync_files "$same_candidate" 123-2
+[[ ! -s "$upload/changed.paths.nul" && ! -s "$upload/removed.paths.nul" && ! -e "$upload/changed.tar.gz" ]] || fail 'identical release unexpectedly transferred files'
 same_inode "$root/current/eldercare/keep.txt" "$same_candidate/keep.txt"
 release abort 123-2 "$sha"
 [[ ! -e "$root/releases/gha-123-2-$sha" ]]
@@ -86,7 +96,7 @@ if release abort 123-1 "$sha"; then fail 'abort removed a previously activated r
 
 # 传输后的篡改不得发布，旧版不能受硬链接副作用影响。
 bad="$(release prepare 123-3 "$sha")"
-sync_files "$bad" "$scratch/bad-rsync.stats"
+sync_files "$bad" 123-3
 printf 'tampered\n' >> "$bad/added.txt"
 if release activate 123-3 "$sha" "$upload"; then fail 'corrupt candidate passed manifest validation'; fi
 [[ "$(readlink -f "$root/current")" == "$root/releases/old" ]]
@@ -95,7 +105,7 @@ release abort 123-3 "$sha"
 
 # 即使清单与文件一致，错误的 commit marker 也不能发布。
 wrong="$(release prepare 123-4 "$sha")"
-sync_files "$wrong" "$scratch/wrong-rsync.stats"
+sync_files "$wrong" 123-4
 printf '%s\n' "$old_sha" > "$wrong/release.txt"
 manifest "$wrong"
 if release activate 123-4 "$sha" "$upload"; then fail 'wrong commit marker was published'; fi
@@ -105,7 +115,7 @@ manifest "$source"
 
 # 公共目录不允许 symlink。
 linked="$(release prepare 123-5 "$sha")"
-sync_files "$linked" "$scratch/link-rsync.stats"
+sync_files "$linked" 123-5
 ln -s /etc/passwd "$linked/unsafe-link"
 if release activate 123-5 "$sha" "$upload"; then fail 'public symlink was published'; fi
 [[ "$(readlink -f "$root/current")" == "$root/releases/old" ]]
@@ -113,10 +123,36 @@ release abort 123-5 "$sha"
 
 # 首页或 404 不完整时不得切换。
 missing="$(release prepare 123-6 "$sha")"
-sync_files "$missing" "$scratch/missing-rsync.stats"
+sync_files "$missing" 123-6
 rm "$missing/404.html"
 if release activate 123-6 "$sha" "$upload"; then fail 'missing 404 page was published'; fi
 [[ "$(readlink -f "$root/current")" == "$root/releases/old" ]]
 release abort 123-6 "$sha"
 
-echo 'Incremental release, integrity, deletion and rollback checks passed.'
+# 差集路径和归档成员必须匹配；失败时旧版仍可用。
+unsafe="$(release prepare 123-7 "$sha")"
+printf '../outside\0' > "$upload/removed.paths.nul"
+: > "$upload/changed.paths.nul"
+rm -f -- "$upload/changed.tar.gz"
+if release apply 123-7 "$sha" "$upload"; then fail 'unsafe deletion path was accepted'; fi
+[[ "$(readlink -f "$root/current")" == "$root/releases/old" ]]
+release abort 123-7 "$sha"
+
+mismatch="$(release prepare 123-8 "$sha")"
+: > "$upload/removed.paths.nul"
+printf './added.txt\0' > "$upload/changed.paths.nul"
+tar -czf "$upload/changed.tar.gz" -C "$source" ./change.txt
+if release apply 123-8 "$sha" "$upload"; then fail 'mismatched archive member was accepted'; fi
+[[ "$(readlink -f "$root/current")" == "$root/releases/old" ]]
+release abort 123-8 "$sha"
+
+prelinked="$(release prepare 123-9 "$sha")"
+ln -s /etc/passwd "$prelinked/unsafe-link"
+: > "$upload/changed.paths.nul"
+: > "$upload/removed.paths.nul"
+rm -f -- "$upload/changed.tar.gz"
+if release apply 123-9 "$sha" "$upload"; then fail 'pre-existing candidate symlink was accepted'; fi
+[[ "$(readlink -f "$root/current")" == "$root/releases/old" ]]
+release abort 123-9 "$sha"
+
+echo 'Manifest-delta release, integrity, deletion and rollback checks passed.'

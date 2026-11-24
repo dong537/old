@@ -15,5 +15,5 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Test release switching and rollback
-        run: bash tests/test-release-eldercare.sh
+        run: python3 tests/test-plan-eldercare-sync.py -q && bash tests/test-release-eldercare.sh
       - run: npm run verify:release

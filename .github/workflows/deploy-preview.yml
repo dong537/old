@@ -34,7 +34,7 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Test release switching and rollback
-        run: bash tests/test-release-eldercare.sh
+        run: python3 tests/test-plan-eldercare-sync.py -q && bash tests/test-release-eldercare.sh
       - name: Verify types and behavior
         run: npm run typecheck && npm test
       - name: Build and scan prefixed static export
@@ -119,27 +119,42 @@ jobs:
             StrictHostKeyChecking yes
             UserKnownHostsFile $HOME/.ssh/known_hosts
             BatchMode yes
+            ConnectTimeout 15
+            ServerAliveInterval 15
+            ServerAliveCountMax 4
           EOF
           chmod 600 "$HOME/.ssh/config"
       - name: Synchronize changed files and switch static release
         id: switch
-        timeout-minutes: 75
+        timeout-minutes: 30
         run: |
           set -euo pipefail
-          command -v rsync > /dev/null || { echo 'rsync is required on the runner.' >&2; exit 1; }
-          ssh eldercare-target 'command -v rsync > /dev/null' || { echo 'rsync is required on the server.' >&2; exit 1; }
+          command -v python3 > /dev/null && command -v tar > /dev/null
+          tar --version | grep -q 'GNU tar'
+          ssh eldercare-target "command -v sha256sum > /dev/null && tar --version | grep -q 'GNU tar'"
           remote_dir="eldercare-actions/$RELEASE_KEY"
           ssh eldercare-target "mkdir -p $remote_dir"
           scp deploy/release-eldercare.sh "eldercare-target:$remote_dir/"
           remote_tree="$(ssh eldercare-target "bash $remote_dir/release-eldercare.sh prepare $RELEASE_KEY $GITHUB_SHA")"
-          expected_tree="/var/www/eldercare/releases/gha-$RELEASE_KEY-$GITHUB_SHA/eldercare"
+          expected_release="/var/www/eldercare/releases/gha-$RELEASE_KEY-$GITHUB_SHA"
+          expected_tree="$expected_release/eldercare"
           if [[ "$remote_tree" != "$expected_tree" ]]; then
             echo 'The prepared release path did not match this run.' >&2
             exit 1
           fi
-          # The candidate hardlinks unchanged files to the old version. Never use --inplace.
-          rsync -r --checksum --delete --stats --rsync-path='umask 022 && rsync' -- "$RUNNER_TEMP/eldercare-out/" "eldercare-target:$remote_tree/"
-          scp eldercare.manifest.sha256 "eldercare-target:$remote_dir/"
+          delta_dir="$RUNNER_TEMP/eldercare-delta"
+          mkdir -p "$delta_dir"
+          scp "eldercare-target:$expected_release/.previous-manifest.sha256" "$delta_dir/previous.sha256"
+          python3 scripts/plan-eldercare-sync.py --previous "$delta_dir/previous.sha256" --next eldercare.manifest.sha256 --changed "$delta_dir/changed.paths.nul" --removed "$delta_dir/removed.paths.nul" --summary "$delta_dir/summary.json"
+          if [[ -s "$delta_dir/changed.paths.nul" ]]; then
+            (cd "$RUNNER_TEMP/eldercare-out" && tar --null --verbatim-files-from --hard-dereference -czf "$delta_dir/changed.tar.gz" -T "$delta_dir/changed.paths.nul")
+            echo "Changed archive bytes: $(stat -c %s "$delta_dir/changed.tar.gz")"
+            scp "$delta_dir/changed.tar.gz" "eldercare-target:$remote_dir/"
+          else
+            echo 'No changed files to upload.'
+          fi
+          scp "$delta_dir/changed.paths.nul" "$delta_dir/removed.paths.nul" eldercare.manifest.sha256 "eldercare-target:$remote_dir/"
+          ssh eldercare-target "bash $remote_dir/release-eldercare.sh apply $RELEASE_KEY $GITHUB_SHA $remote_dir"
           ssh eldercare-target "bash $remote_dir/release-eldercare.sh activate $RELEASE_KEY $GITHUB_SHA $remote_dir"
       - name: Check the public release marker and homepage
         run: |
