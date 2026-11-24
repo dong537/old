@@ -13,6 +13,7 @@ import { mcaPublicDetailHref } from '@/lib/mca-public-ui';
 import { directoryBudgets, directoryConditions, directoryFilterLabel, directoryResultsId, directoryServices, filterPublicDirectory, publicDirectoryHref, removeDirectoryFilter, serviceLabels } from './mca-public-directory-filters';
 import type { McaCatalogIndex, McaCatalogIndexRecord, McaCatalogManifest } from '@/lib/mca-catalog-types';
 import { summarizeMcaCatalog } from '@/lib/mca-catalog-scope';
+import { CatalogSnapshotMismatchError, claimCatalogReload, requireMatchingCatalogSnapshot } from '@/lib/mca-catalog-release';
 import type { McaPublicIndexRecord, McaPublicManifest } from '@/lib/mca-public-types';
 import { sitePath } from '@/lib/site-path';
 import { DirectoryPager, ListSkeleton } from './DirectoryUi';
@@ -51,8 +52,11 @@ function hasValidObservedTimeRange(value: unknown): boolean {
 function parseIndex(value: unknown, manifest: McaCatalogManifest): McaCatalogIndex {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) throw new Error('平台采集索引格式无效。');
   const index = value as Partial<McaCatalogIndex>;
-  if (index.schemaVersion !== 1 || index.snapshotId !== manifest.snapshotId ||
-      !Array.isArray(index.records) || index.records.length !== manifest.recordCount) {
+  if (index.schemaVersion !== 1 || typeof index.snapshotId !== 'string' || !index.snapshotId) {
+    throw new Error('平台采集索引格式无效。');
+  }
+  requireMatchingCatalogSnapshot(index.snapshotId, manifest.snapshotId);
+  if (!Array.isArray(index.records) || index.records.length !== manifest.recordCount) {
     throw new Error('平台采集索引与快照清单不一致。');
   }
   const ids = new Set<string>();
@@ -256,18 +260,40 @@ export function McaPublicDirectoryContent({ records, manifest, params }: {
 export function McaPublicDirectoryView({ manifest }: { manifest: McaCatalogManifest }) {
   const params = useSearchParams();
   const [attempt, setAttempt] = useState(0);
-  const [state, setState] = useState<{ status: 'loading' } | { status: 'error'; message: string } | { status: 'ready'; records: McaCatalogIndexRecord[] }>({ status: 'loading' });
+  const [state, setState] = useState<{ status: 'loading' } | { status: 'error'; message: string } | { status: 'snapshot-mismatch'; message: string } | { status: 'ready'; records: McaCatalogIndexRecord[] }>({ status: 'loading' });
   useEffect(() => {
     const controller = new AbortController();
     setState({ status: 'loading' });
-    fetch(sitePath('/data/mca-catalog/index.v1.json'), { signal: controller.signal }).then(async response => {
+    fetch(sitePath('/data/mca-catalog/index.v1.json'), { signal: controller.signal, cache: 'no-store' }).then(async response => {
       if (!response.ok) throw new Error('平台采集索引读取失败（HTTP ' + response.status + '）。');
       return parseIndex(await response.json(), manifest);
     }).then(index => { if (!controller.signal.aborted) setState({ status: 'ready', records: index.records }); })
-      .catch(error => { if (!controller.signal.aborted) setState({ status: 'error', message: error instanceof Error ? error.message : '平台采集索引读取失败。' }); });
+      .catch(error => {
+        if (controller.signal.aborted) return;
+        if (error instanceof CatalogSnapshotMismatchError) {
+          try {
+            if (claimCatalogReload(window.sessionStorage, manifest.snapshotId)) {
+              window.location.reload();
+              return;
+            }
+          } catch (storageError) {
+            setState({ status: 'snapshot-mismatch', message: '无法保存刷新状态：' + (storageError instanceof Error ? storageError.message : '浏览器存储不可用。') });
+            return;
+          }
+          setState({ status: 'snapshot-mismatch', message: error.message });
+          return;
+        }
+        setState({ status: 'error', message: error instanceof Error ? error.message : '平台采集索引读取失败。' });
+      });
     return () => controller.abort();
   }, [manifest.snapshotId, attempt]);
   if (state.status === 'loading') return <div data-directory-state="loading" aria-busy="true"><p className="notice">正在读取机构目录。筛选条件会保留，加载后会显示匹配机构。</p><ListSkeleton label="正在加载平台采集快照…" /></div>;
+  if (state.status === 'snapshot-mismatch') return <div className="notice" role="alert" data-directory-state="snapshot-mismatch">
+    <p className="m-0 font-semibold">机构目录正在更新</p><p className="mb-0 mt-1 text-sm text-body">请刷新页面重新读取目录，原筛选条件会保留。</p>
+    <div className="mt-3 flex flex-wrap items-center gap-3"><button type="button" className="btn-primary" onClick={() => window.location.reload()}>刷新页面</button>
+    <a href="https://yanglao.mca.gov.cn/?#/index/institutionList" className="underlink inline-flex min-h-11 items-center" target="_blank" rel="noopener noreferrer">查看官方平台 ↗</a></div>
+    <details className="mt-3 text-sm"><summary className="cursor-pointer">查看版本差异</summary><p className="m-0 mt-2 break-words">{state.message}</p></details>
+  </div>;
   if (state.status === 'error') return <div className="notice" role="alert" data-directory-state="error">
     <p className="m-0 font-semibold">这次没能加载机构目录</p><p className="mb-0 mt-1 text-sm text-body">可以重试，原筛选条件会保留。也可以先去官方平台查找。</p>
     <div className="mt-3 flex flex-wrap items-center gap-3"><button type="button" className="btn-primary" onClick={() => setAttempt(value => value + 1)}>重试加载</button>
