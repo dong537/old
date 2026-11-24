@@ -45,6 +45,11 @@ jobs:
         run: |
           printf '%s\n' "$GITHUB_SHA" > out/release.txt
           ./node_modules/.bin/tsx scripts/check-public-output.ts
+          if find out -type l -print -quit | grep -q .; then
+            echo 'The public static export may not contain symlinks.' >&2
+            exit 1
+          fi
+          (cd out && find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum) > eldercare.manifest.sha256
           tar -czf eldercare.tar.gz -C out .
           sha256sum eldercare.tar.gz > eldercare.tar.gz.sha256
       - uses: actions/upload-artifact@v4
@@ -53,6 +58,7 @@ jobs:
           path: |
             eldercare.tar.gz
             eldercare.tar.gz.sha256
+            eldercare.manifest.sha256
           if-no-files-found: error
           retention-days: 14
 
@@ -75,6 +81,13 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: eldercare-preview-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Verify and unpack build artifact
+        run: |
+          set -euo pipefail
+          sha256sum -c eldercare.tar.gz.sha256
+          mkdir -p "$RUNNER_TEMP/eldercare-out"
+          tar -xzf eldercare.tar.gz -C "$RUNNER_TEMP/eldercare-out" --no-same-owner
+          (cd "$RUNNER_TEMP/eldercare-out" && sha256sum -c --quiet "$GITHUB_WORKSPACE/eldercare.manifest.sha256")
       - name: Check deployment configuration and SSH host identity
         env:
           DEPLOY_KEY: ${{ secrets.ELDERCARE_SSH_PRIVATE_KEY }}
@@ -108,36 +121,52 @@ jobs:
             BatchMode yes
           EOF
           chmod 600 "$HOME/.ssh/config"
-      - name: Upload and switch static release
+      - name: Synchronize changed files and switch static release
         id: switch
         timeout-minutes: 75
         run: |
           set -euo pipefail
+          command -v rsync > /dev/null || { echo 'rsync is required on the runner.' >&2; exit 1; }
+          ssh eldercare-target 'command -v rsync > /dev/null' || { echo 'rsync is required on the server.' >&2; exit 1; }
           remote_dir="eldercare-actions/$RELEASE_KEY"
           ssh eldercare-target "mkdir -p $remote_dir"
-          scp eldercare.tar.gz.sha256 deploy/release-eldercare.sh "eldercare-target:$remote_dir/"
-          split -b 8m -d -a 3 eldercare.tar.gz eldercare.part.
-          printf '%s\0' eldercare.part.* | xargs -0 -P 8 -n 1 bash -c '
-            part="$2"
-            for attempt in 1 2 3; do
-              if scp -q -o ConnectTimeout=30 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 "$part" "$1"; then
-                exit 0
-              fi
-              echo "Retrying $part after SSH upload failure ($attempt/3)." >&2
-              sleep "$((attempt * 5))"
-            done
-            echo "Failed to upload $part after 3 attempts." >&2
+          scp deploy/release-eldercare.sh "eldercare-target:$remote_dir/"
+          remote_tree="$(ssh eldercare-target "bash $remote_dir/release-eldercare.sh prepare $RELEASE_KEY $GITHUB_SHA")"
+          expected_tree="/var/www/eldercare/releases/gha-$RELEASE_KEY-$GITHUB_SHA/eldercare"
+          if [[ "$remote_tree" != "$expected_tree" ]]; then
+            echo 'The prepared release path did not match this run.' >&2
             exit 1
-          ' _ "eldercare-target:$remote_dir/"
-          ssh eldercare-target "cd $remote_dir && cat eldercare.part.* > eldercare.tar.gz && sha256sum -c eldercare.tar.gz.sha256 && rm -f eldercare.part.*"
-          ssh eldercare-target "bash $remote_dir/release-eldercare.sh deploy $RELEASE_KEY $GITHUB_SHA $remote_dir"
+          fi
+          # The candidate hardlinks unchanged files to the old version. Never use --inplace.
+          rsync -r --checksum --delete --stats --rsync-path='umask 022 && rsync' -- "$RUNNER_TEMP/eldercare-out/" "eldercare-target:$remote_tree/"
+          scp eldercare.manifest.sha256 "eldercare-target:$remote_dir/"
+          ssh eldercare-target "bash $remote_dir/release-eldercare.sh activate $RELEASE_KEY $GITHUB_SHA $remote_dir"
       - name: Check the public release marker and homepage
         run: |
           set -euo pipefail
+          export_dir="$RUNNER_TEMP/eldercare-out"
+          catalog="$export_dir/quanguo/pingtai/index.html"
+          detail="$(find "$export_dir/quanguo/pingtai" -mindepth 2 -maxdepth 2 -type f -name index.html -print -quit)"
+          article="$(find "$export_dir/quanguo/pingtai" -mindepth 4 -maxdepth 4 -type f -name index.html -print -quit)"
+          if [[ ! -s "$catalog" || -z "$detail" || -z "$article" ]]; then
+            echo 'The export needs a catalog, institution detail and article for the public smoke check.' >&2
+            exit 1
+          fi
           for attempt in 1 2 3; do
-            if marker="$(curl -fsS --max-time 20 "$PUBLIC_BASE/release.txt")" && [[ "$marker" == "$GITHUB_SHA" ]] && curl -fsSI --max-time 20 "$PUBLIC_BASE/" > /dev/null; then
-              echo "Published commit $GITHUB_SHA"
-              exit 0
+            if marker="$(curl -fsS --max-time 20 "$PUBLIC_BASE/release.txt")" && [[ "$marker" == "$GITHUB_SHA" ]] && curl -fsS --max-time 20 -o /dev/null "$PUBLIC_BASE/"; then
+              pages_ok=true
+              for page in "$catalog" "$detail" "$article"; do
+                relative="${page#"$export_dir/"}"
+                route="${relative%index.html}"
+                if ! curl -fsS --max-time 20 -o /dev/null "$PUBLIC_BASE/$route"; then
+                  pages_ok=false
+                  break
+                fi
+              done
+              if [[ "$pages_ok" == true ]]; then
+                echo "Published commit $GITHUB_SHA"
+                exit 0
+              fi
             fi
             echo "Public smoke check attempt $attempt failed; retrying." >&2
             sleep 3
@@ -145,7 +174,11 @@ jobs:
           exit 1
       - name: Restore previous release after failed smoke check
         if: failure() && (steps.switch.outcome == 'success' || steps.switch.outcome == 'failure')
-        run: ssh eldercare-target "bash eldercare-actions/$RELEASE_KEY/release-eldercare.sh rollback $RELEASE_KEY $GITHUB_SHA"
+        run: ssh eldercare-target "if [ -f eldercare-actions/$RELEASE_KEY/release-eldercare.sh ]; then bash eldercare-actions/$RELEASE_KEY/release-eldercare.sh rollback $RELEASE_KEY $GITHUB_SHA; fi"
+      - name: Remove a never-activated candidate after transfer failure
+        if: failure() && steps.switch.outcome == 'failure'
+        continue-on-error: true
+        run: ssh eldercare-target "if [ -f eldercare-actions/$RELEASE_KEY/release-eldercare.sh ]; then bash eldercare-actions/$RELEASE_KEY/release-eldercare.sh abort $RELEASE_KEY $GITHUB_SHA; fi"
       - name: Remove temporary upload files
         if: always() && steps.switch.outcome != 'skipped'
         continue-on-error: true
