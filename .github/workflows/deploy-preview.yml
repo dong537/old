@@ -60,7 +60,7 @@ jobs:
     needs: build
     if: inputs.deploy == true
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 90
     environment:
       name: tencent-preview
       url: https://124.223.86.157/eldercare/
@@ -110,7 +110,7 @@ jobs:
           chmod 600 "$HOME/.ssh/config"
       - name: Upload and switch static release
         id: switch
-        timeout-minutes: 35
+        timeout-minutes: 75
         run: |
           set -euo pipefail
           remote_dir="eldercare-actions/$RELEASE_KEY"
