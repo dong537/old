@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { PHASE_DEVELOPMENT_SERVER } from 'next/constants.js';
+import { computeStableBuildId } from './scripts/stable-build-id.mjs';
 
 const privatePreview = process.env.ELDERCARE_PRIVATE_PREVIEW === '1';
 const basePath = process.env.NEXT_PUBLIC_ELDERCARE_BASE_PATH ?? '';
@@ -31,6 +32,7 @@ const config = (phase) => {
   }
   return {
     output: 'export',
+    generateBuildId: async () => computeStableBuildId(process.cwd(), basePath),
     ...(basePath ? { basePath } : {}),
     outputFileTracingRoot: process.cwd(),
     trailingSlash: true,
